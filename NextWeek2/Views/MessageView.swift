@@ -23,11 +23,11 @@ enum Message: Hashable, Identifiable {
         case .events:
             return "No hay eventos."
         case .denied:
-            return "La aplicación no tiene permiso para acceder a los eventos del calendario. Por favor, concede acceso a la aplicación al Calendario en Configuración."
+            return "La aplicación no tiene permiso para acceder a los eventos del calendario. Por favor, concede acceso a la aplicación al Calendario en Ajustes."
         case .restricted:
-            return "Este dispositivo no permite el acceso a los eventos del calendario. Por favor, actualiza los permisos en Configuración."
+            return "Este dispositivo no permite el acceso a los eventos del calendario. Por favor, actualiza los permisos en Ajustes."
         case .upgrade:
-            let access = "La aplicación tiene acceso de solo escritura al Calendario en Configuración."
+            let access = "La aplicación tiene acceso de solo escritura al Calendario en Ajustes."
             let update = "Por favor, concede acceso completo para que la aplicación pueda obtener y eliminar tus eventos."
             return "\(access) \(update)"
         }
@@ -42,14 +42,11 @@ struct MessageView: View {
     }
     
     var body: some View {
-        VStack(alignment: .leading) {
-            Text(message.localizedName)
-                .font(.title3)
-                .fontWeight(.medium)
-                .multilineTextAlignment(.leading)
-                .foregroundStyle(.primary)
-                .padding()
-        }
+        ContentUnavailableView(
+            "",
+            systemImage: "exclamationmark.triangle.fill",
+            description: Text(message.localizedName)
+        )
     }
 }
 

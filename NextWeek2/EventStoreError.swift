@@ -18,15 +18,15 @@ extension EventStoreError: LocalizedError {
     var errorDescription: String? {
         switch self {
         case .denied:
-            return NSLocalizedString("The app doesn't have permission to access the Calendar in Settings", comment: "Access denied")
+            return NSLocalizedString("La app no tiene permiso para acceder al Calendario en Ajustes.", comment: "Acceso denegado")
         case .restricted:
-            return NSLocalizedString("This device doesn't allow access to Calendar.", comment: "Access restricted")
+            return NSLocalizedString("Este dispositivo no permite el acceso al Calendario.", comment: "Acceso restringido")
         case .unknown:
-            return NSLocalizedString("An unknown error occured.", comment: "Unknown error")
+            return NSLocalizedString("Se ha producido un error desconocido.", comment: "Error desconocido")
         case .upgrade:
-            let access = "The app has write-only access to Calendar in Settings."
-            let update = "Please grant it full access so the app can fetch and delete your events."
-            return NSLocalizedString("\(access) \(update)", comment: "Upgrade to full access")
+            let access = "La app tiene acceso de solo escritura al Calendario en Ajustes."
+            let update = "Por favor, concede acceso completo para que la app pueda obtener y eliminar tus eventos."
+            return NSLocalizedString("\(access) \(update)", comment: "Actualiza a acceso completo")
         }
     }
 }
