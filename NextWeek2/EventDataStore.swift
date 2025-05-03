@@ -43,11 +43,11 @@ actor EventDataStore {
         }
     }
     
-    /// Fetches all events occuring within a month in all the user's calendars.
+    /// Fetches all events occuring within a week in all the user's calendars.
     func fetchEvents() -> [EKEvent] {
         guard isFullAccessAuthorized else { return [] }
         let start = Date.now
-        let end = start.oneMonthOut
+        let end = start.oneWeekLater
         let predicate = eventStore.predicateForEvents(withStart: start, end: end, calendars: nil)
         return eventStore.events(matching: predicate).sortedEventByAscendingDate()
     }

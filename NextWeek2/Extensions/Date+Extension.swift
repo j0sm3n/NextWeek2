@@ -8,8 +8,8 @@
 import Foundation
 
 extension Date {
-    /// A month from the current date.
-    var oneMonthOut: Date {
-        Calendar.current.date(byAdding: .month, value: 1, to: Date.now) ?? Date()
+    /// A week from the current date.
+    var oneWeekLater: Date {
+        Calendar.current.date(byAdding: .day, value: 7, to: Date.now) ?? Date()
     }
 }
