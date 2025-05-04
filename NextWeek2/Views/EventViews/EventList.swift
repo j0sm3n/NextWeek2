@@ -147,5 +147,6 @@ fileprivate struct EventRow: View {
                     .font(.caption)
             }
         }
+        .contentShape(.rect)
     }
 }
