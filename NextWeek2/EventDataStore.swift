@@ -69,4 +69,10 @@ actor EventDataStore {
             throw error
         }
     }
+    
+    /// Create an event with the specified details, then save it to the user's Calendar.
+    func addEvent(_ event: Event, toCalendar calendar: EKCalendar) throws {
+        let newEvent = event.addEvent(store: eventStore, calendar: calendar)
+        try self.eventStore.save(newEvent, span: .thisEvent)
+    }
 }

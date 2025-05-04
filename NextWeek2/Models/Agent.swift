@@ -22,9 +22,19 @@ struct Agent: Hashable {
     let category: Category
     let location: Location
     let calendarIdentifier: String
-    
+}
+
+extension Agent: Identifiable {
+    var id: Int { cf }
+}
+
+extension Agent {
     public static var agents: [Agent] = [
         Agent(cf: 1508, category: .usi, location: .benidorm, calendarIdentifier: "872F3451-507C-4498-87C2-E58200E5CC50"),
         Agent(cf: 2076, category: .maquinista, location: .benidorm, calendarIdentifier: "A7160EBC-02B1-4C30-837D-07D90E596784")
     ]
+    
+    func agentWithCF(_ cf: Int) -> Agent? {
+        Self.agents.first { $0.cf == cf }
+    }
 }

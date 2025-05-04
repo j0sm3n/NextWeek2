@@ -12,16 +12,30 @@ extension EKEvent: @retroactive Identifiable {
     public var id: String {
         return eventIdentifier
     }
+}
+
+extension EKEvent {
+    convenience init(event: Event, eventStore: EKEventStore, calendar: EKCalendar) {
+        self.init(eventStore: eventStore)
+        self.title = event.title
+        self.startDate = event.startDate
+        self.endDate = event.endDate
+        self.calendar = calendar
+        self.timeZone = TimeZone.current
+    }
+}
     
+extension EKEvent {
     var color: Color {
         return Color(UIColor(cgColor: self.calendar.cgColor))
     }
     
-    var durationString: String {
+    var fromStartDateToEndDateString: String {
         guard let startDate = self.startDate,
               let endDate = self.endDate else { return "" }
-        return "\(startDate.formatted(date: .omitted, time: .shortened))" +
-        "-" +
-        "\(endDate.formatted(date: .omitted, time: .shortened))"
+        let formatter = DateFormatter()
+        formatter.dateStyle = .none
+        formatter.timeStyle = .short
+        return "\(formatter.string(from: startDate)) - \(formatter.string(from: endDate))"
     }
 }

@@ -61,4 +61,8 @@ final class EventStoreManager {
     func removeEvents(_ events: [EKEvent]) async throws {
         try await dataStore.removeEvents(events)
     }
+    
+    func saveEvent(_ event: Event, calendar: EKCalendar) async throws {
+        try await dataStore.addEvent(event, toCalendar: calendar)
+    }
 }
