@@ -75,4 +75,8 @@ actor EventDataStore {
         let newEvent = event.addEvent(store: eventStore, calendar: calendar)
         try self.eventStore.save(newEvent, span: .thisEvent)
     }
+    
+    func calendarWithIdentifier(_ calendarIdentifier: String) -> EKCalendar? {
+        return eventStore.calendar(withIdentifier: calendarIdentifier)
+    }
 }

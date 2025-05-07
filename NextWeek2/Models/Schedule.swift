@@ -19,16 +19,25 @@ struct WorkDay {
 
 struct Event {
     let title: String
-    let startDate: Date
-    let endDate: Date
+    let startDate: Date?
+    let endDate: Date?
+    
+    init(title: String, startDate: Date? = nil, endDate: Date? = nil) {
+        self.title = title
+        self.startDate = startDate
+        self.endDate = endDate
+    }
 }
 
 extension WorkDay {
     func convertToEvent() -> Event {
-        let startDate = Calendar.current.startOfDay(for: date).addingTimeInterval(shift.startTime)
-        let endDate = startDate.addingTimeInterval(shift.duration)
-        
-        return Event(title: "Turno \(self.shift.name)", startDate: startDate, endDate: endDate)
+        if let startTime = shift.startTime, let duration = shift.duration {
+            let startDate = Calendar.current.startOfDay(for: date).addingTimeInterval(startTime)
+            let endDate = startDate.addingTimeInterval(duration)
+            return Event(title: "Turno \(self.shift.name)", startDate: startDate, endDate: endDate)
+        } else {
+            return Event(title: "Turno \(self.shift.name)")
+        }
     }
 }
 

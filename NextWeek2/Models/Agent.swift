@@ -30,8 +30,8 @@ extension Agent: Identifiable {
 
 extension Agent {
     public static var agents: [Agent] = [
-        Agent(cf: 1508, category: .usi, location: .benidorm, calendarIdentifier: "872F3451-507C-4498-87C2-E58200E5CC50"),
-        Agent(cf: 2076, category: .maquinista, location: .benidorm, calendarIdentifier: "A7160EBC-02B1-4C30-837D-07D90E596784")
+        Agent(cf: 1508, category: .usi, location: .benidorm, calendarIdentifier: "BEB882DA-754E-4F1D-A336-F5F161C16926"),
+        Agent(cf: 2076, category: .maquinista, location: .benidorm, calendarIdentifier: "0264FDAE-34E9-449A-AAA7-147AFE593846")
     ]
     
     func agentWithCF(_ cf: Int) -> Agent? {

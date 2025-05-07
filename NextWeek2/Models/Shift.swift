@@ -9,8 +9,14 @@ import Foundation
 
 struct Shift {
     let name: String
-    let startTime: TimeInterval
-    let duration: TimeInterval
+    let startTime: TimeInterval?
+    let duration: TimeInterval?
+    
+    init(name: String, startTime: TimeInterval? = nil, duration: TimeInterval? = nil) {
+        self.name = name
+        self.startTime = startTime
+        self.duration = duration
+    }
 }
 
 extension Shift {

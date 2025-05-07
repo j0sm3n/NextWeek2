@@ -14,7 +14,7 @@ class FileManager {
     let agent: Agent
     let shifts: [Shift]
     
-    var agentWeekPlan: Schedule?
+    var schedule: Schedule?
     
     init(fileURL: URL, agent: Agent, shifts: [Shift]) {
         self.fileURL = fileURL
@@ -50,16 +50,14 @@ class FileManager {
             var week: [WorkDay] = []
             
             for i in 0...6 {
-                if let shift = shifts.filter({ $0.name == rowShifts[i] }).first {
-                    let calendarEvent = WorkDay(
-                        shift: shift,
-                        date: Calendar.current.date(byAdding: .day, value: i, to: monday) ?? Date()
-                    )
-                    week.append(calendarEvent)
-                }
+                let calendarEvent = WorkDay(
+                    shift: shifts.filter({ $0.name == rowShifts[i] }).first ?? Shift(name: rowShifts[i]),
+                    date: Calendar.current.date(byAdding: .day, value: i, to: monday) ?? Date()
+                )
+                week.append(calendarEvent)
             }
             
-            agentWeekPlan = Schedule(agentCF: agent.cf, week: week)
+            schedule = Schedule(agentCF: agent.cf, week: week)
         }
     }
     
@@ -69,15 +67,15 @@ class FileManager {
         }
         if let startDate = startDateString.components(separatedBy: " ").last {
             let formatter = DateFormatter()
-                formatter.dateFormat = "dd-MM-yy"
-                formatter.locale = Locale(identifier: "es_ES")
-                formatter.timeZone = TimeZone.current
-                
-                if let date = formatter.date(from: startDate) {
-                    return date
-                } else {
-                    fatalError("Coludn't parse date \(startDate)")
-                }
+            formatter.dateFormat = "dd-MM-yy"
+            formatter.locale = Locale(identifier: "es_ES")
+            formatter.timeZone = TimeZone.current
+            
+            if let date = formatter.date(from: startDate) {
+                return date
+            } else {
+                fatalError("Coludn't parse date \(startDate)")
+            }
         }
         return .now
     }
@@ -116,16 +114,14 @@ class FileManager {
         
         for i in 0...6 {
             let shift = shifts.filter { $0.name == rowShifts[i] }.first
-            if let shift {
-                let calendarEvent = WorkDay(
-                    shift: shift,
-                    date: Calendar.current.date(byAdding: .day, value: i, to: monday) ?? Date()
-                )
-                week.append(calendarEvent)
-            }
+            let calendarEvent = WorkDay(
+                shift: shift ?? Shift(name: rowShifts[i]),
+                date: Calendar.current.date(byAdding: .day, value: i, to: monday) ?? Date()
+            )
+            week.append(calendarEvent)
         }
         
-        agentWeekPlan = Schedule(agentCF: agent.cf, week: week)
+        schedule = Schedule(agentCF: agent.cf, week: week)
     }
     
     private func getXLSXFile() -> XLSXFile {
