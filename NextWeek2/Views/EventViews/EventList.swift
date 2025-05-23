@@ -36,7 +36,7 @@ struct EventList: View {
     }
 
     /*
-        Displays a list of events that occur within next seven days in all the selected user's calendars.
+        Displays a list of events that occur within next two weeks in all the selected user's calendars.
         Removes an event from Calendar when the user deletes it from the list.
     */
     var body: some View {

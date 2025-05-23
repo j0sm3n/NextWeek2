@@ -9,7 +9,7 @@ import Foundation
 
 extension Date {
     /// A week from the current date.
-    var oneWeekLater: Date {
-        Calendar.current.date(byAdding: .day, value: 7, to: Date.now) ?? Date()
+    var twoWeeksLater: Date {
+        Calendar.current.date(byAdding: .day, value: 14, to: Date.now) ?? Date()
     }
 }

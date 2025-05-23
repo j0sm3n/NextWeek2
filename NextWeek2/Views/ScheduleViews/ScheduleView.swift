@@ -74,12 +74,16 @@ struct ScheduleView: View {
     
     private func populateWeek() {
         isLoading = true
-        let shifts = Shift.shiftsFor(category: agent.category)
-        
-        let fileManager = FileManager(fileURL: filename, agent: agent, shifts: shifts)
-        fileManager.getData()
-        if let schedule = fileManager.schedule {
-            self.week = schedule.week
+        do {
+            let shifts = Shift.shiftsFor(category: agent.category)
+            
+            let fileManager = FileManager(fileURL: filename, agent: agent, shifts: shifts)
+            try fileManager.getData()
+            if let schedule = fileManager.schedule {
+                self.week = schedule.week
+            }
+        } catch {
+            showError(error, title: error.localizedDescription)
         }
         isLoading = false
     }

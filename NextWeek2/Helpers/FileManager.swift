@@ -22,18 +22,18 @@ class FileManager {
         self.shifts = shifts
     }
     
-    func getData() {
+    func getData() throws {
         if fileURL.pathExtension == "xlsx" {
             getAgentsWeekFromXLSX()
         } else if fileURL.pathExtension == "pdf" {
-            getAgentsWeekFromPDF()
+            try getAgentsWeekFromPDF()
         }
     }
     
     // MARK: - PDF functions
-    private func getAgentsWeekFromPDF() {
+    private func getAgentsWeekFromPDF() throws {
         guard let pdfDocument = PDFDocument(url: fileURL) else {
-            fatalError("Couldn't open PDF document at \(fileURL)")
+            throw FileManagerError.cantOpenFile
         }
         
         var fullText: String = ""
@@ -45,7 +45,7 @@ class FileManager {
             }
         }
         
-        if let rowShifts = getAgentRow(of: agent, from: fullText) {
+        if let rowShifts = try getAgentRow(of: agent, from: fullText) {
             let monday = getDate(from: fullText)
             var week: [WorkDay] = []
             
@@ -80,20 +80,24 @@ class FileManager {
         return .now
     }
     
-    private func getAgentRow(of agent: Agent, from text: String) -> [String]? {
-        if let agentRow = extractLine(startingWith: String(agent.cf), from: text) {
-            let agentRowComponents = agentRow.components(separatedBy: " ")
-            let rowShifts = Array(agentRowComponents.suffix(7))
-            guard rowShifts.count == 7 else { return nil }
-            return rowShifts
+    private func getAgentRow(of agent: Agent, from text: String) throws -> [String]? {
+        guard let agentRow = extractLine(startingWith: String(agent.cf), from: text) else {
+            throw FileManagerError.agentNotFound
         }
-        return nil
+        
+        let agentRowComponents = agentRow.components(separatedBy: " ")
+        let rowShifts = Array(agentRowComponents.suffix(7))
+        guard rowShifts.count == 7 else {
+            throw FileManagerError.cantGetAgentRow
+        }
+        return rowShifts
     }
     
     private func extractLine(startingWith prefix: String, from text: String) -> String? {
         let lines = text.components(separatedBy: .newlines)
         
         for line in lines {
+            print(line)
             if line.trimmingCharacters(in: .whitespaces).hasPrefix(prefix) {
                 return line
             }
