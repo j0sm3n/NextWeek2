@@ -8,6 +8,7 @@
 import SwiftUI
 
 struct ContentView: View {
+    //TODO: Create a settings view to set Agent CF, choose Calendar...
     @State private var storeManager = EventStoreManager()
 
     var body: some View {

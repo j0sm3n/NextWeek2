@@ -43,7 +43,6 @@ struct ScheduleView: View {
                             ForEach(week, id: \.date) { workDay in
                                 CardView(date: workDay.date, shift: workDay.shift.name)
                                     .listRowSpacing(0)
-//                                    .padding(.bottom, -8)
                             }
                         }
                         .listStyle(.plain)

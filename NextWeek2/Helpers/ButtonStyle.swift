@@ -14,8 +14,8 @@ struct PrimaryButtonStyle: ButtonStyle {
             .fontWeight(.semibold)
             .frame(height: 40)
             .frame(maxWidth: .infinity)
-            .foregroundStyle(.white)
-            .background(Color.black)
+            .foregroundStyle(Color.text)
+            .background(Color.accentColor)
             .clipShape(.rect(cornerRadius: 12))
     }
 }
