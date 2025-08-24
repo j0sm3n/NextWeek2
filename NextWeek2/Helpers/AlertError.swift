@@ -15,7 +15,7 @@ struct AlertError: ViewModifier {
     func body(content: Content) -> some View {
         content
             .alert(
-                title ?? "Ha ocurrido un error",
+                title == message ? "Ha ocurrido un error" : title ?? "Ha ocurrido un error",
                 isPresented: $isPresented,
                 actions: { },
                 message: { Text(message ?? "Ha ocurrido un error.") }
