@@ -30,10 +30,18 @@ extension EventList {
         }
         
         ToolbarItem(placement: .bottomBar) {
-            Button("Añadir turnos") {
+            Button {
                 showFileChooser = true
+            } label: {
+                Text("Añadir turnos")
+                    .font(.title3)
+                    .fontWeight(.semibold)
             }
-            .buttonStyle(.myAppPrimaryButton)
+            .frame(height: 48)
+            .frame(maxWidth: .infinity)
+            .buttonStyle(.borderedProminent)
+            .buttonBorderShape(.capsule)
+            .tint(.accent)
         }
     }
 }

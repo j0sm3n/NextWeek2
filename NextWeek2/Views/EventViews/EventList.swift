@@ -12,7 +12,6 @@ struct EventList: View {
     @Environment(EventStoreManager.self) var storeManager
     
     @State private var shouldPresentError: Bool = false
-    @State private var alertMessage: String?
     @State private var alertTitle: String?
     
     @State var selection: Set<EKEvent> = []
@@ -20,18 +19,14 @@ struct EventList: View {
     @State private var selectedEvent: EKEvent?
     @State private var showEventEditViewController = false
     
-    @State private var selectedAgent: Agent?
-    @AppStorage("selectedAgent") var selectedAgentCF: Int = 0
+    @State private var selectedAgent: Agent = Agent.agents.first!
     
     @State private var filename: URL?
     @State var showFileChooser: Bool = false
     
     var filteredEvents: [EKEvent] {
-        guard let agent = selectedAgent else {
-            return storeManager.events
-        }
-        return storeManager.events.filter {
-            $0.calendar.calendarIdentifier == agent.calendarIdentifier
+        storeManager.events.filter {
+            $0.calendar.calendarIdentifier == selectedAgent.calendarIdentifier
         }
     }
 
@@ -44,7 +39,7 @@ struct EventList: View {
             if storeManager.events.isEmpty {
                 MessageView(message: .events)
             } else {
-                agentPicker
+                AgentPicker(selectedAgent: $selectedAgent)
 
                 List(selection: $selection) {
                     ForEach(filteredEvents, id: \.self) { event in
@@ -60,10 +55,7 @@ struct EventList: View {
                 .environment(\.editMode, $editMode)
             }
         }
-        .alertErrorMessage(message: alertMessage, title: alertTitle, isPresented: $shouldPresentError)
-        .task {
-            selectedAgent = Agent.agents.first(where: { $0.cf == selectedAgentCF }) ?? Agent.agents.first!
-        }
+        .alertMessage(title: alertTitle, isPresented: $shouldPresentError)
         .fileImporter(isPresented: $showFileChooser, allowedContentTypes: [.pdf, .spreadsheet], allowsMultipleSelection: false) { result in
             do {
                 let fileUrl = try result.get()
@@ -71,33 +63,16 @@ struct EventList: View {
                     self.filename = fileUrl.first
                 }
             } catch {
-                showError(error, title: "Ha ocurrido un error al importar el archivo.")
+                showAlert(title: "Ha ocurrido un error al importar el archivo.")
             }
         }
         .sheet(item: $filename,
                onDismiss: { filename?.stopAccessingSecurityScopedResource() },
                content: { file in
-            ScheduleView(agent: selectedAgent!, filename: file)
+            ImportView(filename: file)
         })
         .sheet(isPresented: $showEventEditViewController) {
             EventEditViewController(event: $selectedEvent, eventStore: storeManager.dataStore.eventStore)
-        }
-    }
-    
-    @ViewBuilder
-    var agentPicker: some View {
-        Picker(selection: $selectedAgent) {
-            ForEach(Agent.agents, id: \.cf) { agent in
-                Text(agent.cf, format: .number)
-                    .tag(agent)
-            }
-        } label: {
-            
-        }
-        .pickerStyle(.segmented)
-        .padding()
-        .onChange(of: selectedAgent) { _, newValue in
-            selectedAgentCF = newValue?.cf ?? 0
         }
     }
     
@@ -108,14 +83,14 @@ struct EventList: View {
                 try await storeManager.removeEvents(events)
                 selection.removeAll()
             } catch {
-                showError(error, title: "Ha ocurrido un error al borrar los eventos seleccionados.")
+                showAlert(title: "Ha ocurrido un error al borrar los eventos seleccionados.")
             }
         }
     }
     
-    func showError(_ error: Error, title: String) {
+    /// Set up details of the alert message.
+    func showAlert(title: String) {
         alertTitle = title
-        alertMessage = error.localizedDescription
         shouldPresentError = true
     }
 }

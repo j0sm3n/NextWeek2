@@ -9,9 +9,7 @@ import SwiftUI
 
 struct MainView: View {
     @Environment(EventStoreManager.self) var storeManager
-    @State private var shouldPresentError: Bool = false
-    
-    @State private var alertMessage: String?
+    @State private var shouldPresentAlert: Bool = false
     @State private var alertTitle: String?
     
     /*
@@ -25,7 +23,7 @@ struct MainView: View {
             VStack {
                 switch storeManager.authorizationStatus {
                 case .notDetermined:
-                    MessageView(message: .none)
+                    messageView(with: .none)
                 case .restricted:
                     messageView(with: .restricted)
                 case .denied:
@@ -40,13 +38,13 @@ struct MainView: View {
                     fatalError("An error occurs.")
                 }
             }
-            .alertErrorMessage(message: alertMessage, title: alertTitle, isPresented: $shouldPresentError)
+            .alertMessage(title: alertTitle, isPresented: $shouldPresentAlert)
             .navigationTitle("Próximos Eventos")
             .task {
                 do {
                     try await storeManager.setupEventStore()
                 } catch {
-                    showError(error, title: "Authorization failed")
+                    showAlert(title: "Authorization failed")
                 }
             }
         }
@@ -54,16 +52,15 @@ struct MainView: View {
     
     @ViewBuilder
     func messageView(with message: Message) -> some View {
-        if !shouldPresentError {
+        if !shouldPresentAlert {
             MessageView(message: message)
         }
     }
     
     /// Set up details of the alert message.
-    func showError(_ error: Error, title: String) {
+    func showAlert(title: String) {
         alertTitle = title
-        alertMessage = error.localizedDescription
-        shouldPresentError = true
+        shouldPresentAlert = true
     }
 }
 
