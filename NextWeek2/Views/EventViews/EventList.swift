@@ -75,9 +75,7 @@ struct EventList: View {
             }
         }
         .sheet(item: $filename,
-               onDismiss: {
-            filename?.stopAccessingSecurityScopedResource()
-        },
+               onDismiss: { filename?.stopAccessingSecurityScopedResource() },
                content: { file in
             ScheduleView(agent: selectedAgent!, filename: file)
         })
