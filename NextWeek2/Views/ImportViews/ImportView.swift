@@ -75,6 +75,7 @@ struct ImportView: View {
                             )
                             .font(.title3)
                             .fontWeight(.semibold)
+                            .foregroundStyle(.text)
                             .frame(height: 48)
                             .frame(maxWidth: .infinity)
                         }
@@ -125,4 +126,10 @@ struct ImportView: View {
         alertTitle = title
         shouldPresentAlert = true
     }
+}
+
+#Preview {
+    @Previewable @State var filename = Bundle.main.url(forResource: "08-09 GSEMANAL 2025", withExtension: "xlsx")!
+    ImportView(filename: filename)
+        .environment(EventStoreManager())
 }
