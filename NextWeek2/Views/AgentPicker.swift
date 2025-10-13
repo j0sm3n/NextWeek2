@@ -8,11 +8,11 @@
 import SwiftUI
 
 struct AgentPicker: View {
-    @Binding var selectedAgent: Agent
+    @Environment(AgentStore.self) var agentStore
 
     var body: some View {
-        Picker(selection: $selectedAgent) {
-            ForEach(Agent.agents) { agent in
+        Picker(selection: Bindable(agentStore).selectedAgent) {
+            ForEach(agentStore.agents) { agent in
                 Text(agent.cf, format: .number)
                     .tag(agent)
             }
@@ -25,6 +25,6 @@ struct AgentPicker: View {
 }
 
 #Preview {
-    @Previewable @State var agent: Agent = Agent.agents.first!
-    AgentPicker(selectedAgent: $agent)
+    AgentPicker()
+        .environment(AgentStore())
 }

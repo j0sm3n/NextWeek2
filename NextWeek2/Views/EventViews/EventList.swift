@@ -10,6 +10,7 @@ import SwiftUI
 
 struct EventList: View {
     @Environment(EventStoreManager.self) var storeManager
+    @Environment(AgentStore.self) var agentStore
     
     @State private var shouldPresentError: Bool = false
     @State private var alertTitle: String?
@@ -19,14 +20,12 @@ struct EventList: View {
     @State private var selectedEvent: EKEvent?
     @State private var showEventEditViewController = false
     
-    @State private var selectedAgent: Agent = Agent.agents.first!
-    
     @State private var filename: URL?
     @State var showFileChooser: Bool = false
     
     var filteredEvents: [EKEvent] {
         storeManager.events.filter {
-            $0.calendar.calendarIdentifier == selectedAgent.calendarIdentifier
+            $0.calendar.calendarIdentifier == agentStore.selectedAgent.calendar.calendarIdentifier
         }
     }
 
@@ -39,7 +38,7 @@ struct EventList: View {
             if storeManager.events.isEmpty {
                 MessageView(message: .events)
             } else {
-                AgentPicker(selectedAgent: $selectedAgent)
+                AgentPicker()
 
                 List(selection: $selection) {
                     ForEach(filteredEvents, id: \.self) { event in

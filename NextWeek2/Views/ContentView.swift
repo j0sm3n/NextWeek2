@@ -8,19 +8,28 @@
 import SwiftUI
 
 struct ContentView: View {
-    //TODO: Create a settings view to set Agent CF, choose Calendar...
     @State private var storeManager = EventStoreManager()
-
+    @State private var agentsStore = AgentStore()
+    
     var body: some View {
-        MainView()
-            .environment(storeManager)
-            .task {
-                await storeManager.listenForCalendarChanges()
-            }
+        if agentsStore.agentsHaveValidCalendar() {
+            MainView()
+                .environment(storeManager)
+                .environment(agentsStore)
+                .task {
+                    await storeManager.listenForCalendarChanges()
+                }
+        } else {
+            SettingsView()
+                .environment(storeManager)
+                .environment(agentsStore)
+        }
+        
     }
 }
 
 #Preview {
     ContentView()
         .environment(EventStoreManager())
+        .environment(AgentStore())
 }
