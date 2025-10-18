@@ -8,6 +8,7 @@
 import SwiftUI
 
 struct SettingsView: View {
+    @Environment(\.dismiss) private var dismiss
     @Environment(EventStoreManager.self) var storeManager
     @Environment(AgentStore.self) var agentStore
     @State private var isPresented: Bool = false
@@ -35,13 +36,22 @@ struct SettingsView: View {
             }
             .navigationTitle("Ajustes")
             .sheet(isPresented: $isPresented) {
-                CalendarChooserView()
+                NavigationStack {
+                    CalendarChooserView()
+                }
             }
             .task {
                 do {
                     try await storeManager.setupEventStore()
                 } catch {
                     print("Authorization failed")
+                }
+            }
+            .toolbar {
+                ToolbarItem(placement: .confirmationAction) {
+                    Button(role: .close) {
+                        dismiss()
+                    }
                 }
             }
         }

@@ -8,16 +8,12 @@
 import SwiftUI
 
 struct MainView: View {
+    @Environment(AgentStore.self) var agentsStore
     @Environment(EventStoreManager.self) var storeManager
+    @State private var showSettings: Bool = false
     @State private var shouldPresentAlert: Bool = false
     @State private var alertTitle: String?
     
-    /*
-         The app first verifies the authorization status for Calendar events.
-         If the user authorized full access to Calendar, the app displays a
-         list of events that occur within this month in all the user's calendars.
-         If the user denied or restricted access, the app provides the reason.
-     */
     var body: some View {
         NavigationStack {
             VStack {
@@ -41,10 +37,22 @@ struct MainView: View {
             .alertMessage(title: alertTitle, isPresented: $shouldPresentAlert)
             .navigationTitle("Próximos Eventos")
             .task {
+                showSettings = !agentsStore.agentsHaveValidCalendar()
                 do {
                     try await storeManager.setupEventStore()
                 } catch {
                     showAlert(title: "Authorization failed")
+                }
+            }
+            .fullScreenCover(isPresented: $showSettings) {
+                SettingsView()
+            }
+            .toolbar {
+                ToolbarItem(placement: .automatic) {
+                    Button("Ajustes", systemImage: "gear") {
+                        showSettings = true
+                    }
+                    
                 }
             }
         }
@@ -57,7 +65,6 @@ struct MainView: View {
         }
     }
     
-    /// Set up details of the alert message.
     func showAlert(title: String) {
         alertTitle = title
         shouldPresentAlert = true
@@ -66,5 +73,6 @@ struct MainView: View {
 
 #Preview {
     MainView()
+        .environment(AgentStore())
         .environment(EventStoreManager())
 }
