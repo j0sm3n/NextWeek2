@@ -16,76 +16,108 @@ struct ImportView: View {
     @State private var shouldPresentAlert: Bool = false
     @State private var alertTitle: String?
     
-    @State private var week: [WorkDay] = []
+    @State private var schedule: [Agent: [Event]] = [:]
     @State private var isLoading: Bool = false
     
-    @State private var savedStatus: [Bool] = [false, false]
-    
-    var savedShiftsForAllAgents: Bool { savedStatus.allSatisfy { $0 == true } }
-    
     let filename: URL
+    
+    var dates: [Date] {
+        Array(Set(schedule.values.flatMap { events in
+            events.compactMap {
+                Calendar.current.startOfDay(for: $0.startDate)
+            }
+        }))
+    }
     
     var body: some View {
         NavigationStack {
             VStack(spacing: 0) {
-                AgentPicker()
-                
                 if isLoading {
                     ProgressView()
                         .padding(.top)
                 } else {
-                    if week.isEmpty {
+                    if schedule.isEmpty {
                         ContentUnavailableView(
                             "No hay turnos",
                             systemImage: "exclamationmark.magnifyingglass",
-                            description: Text(
-                                "No se ha encontrado ningún turno para el agente \(agentStore.selectedAgent.cf)"
-                            )
+                            description: Text("No se ha encontrado ningún turno")
                         )
                         .offset(y: -60)
                     } else {
-                        List {
-                            ForEach(week, id: \.date) { workDay in
-                                CardView(date: workDay.date, shift: workDay.shift.name)
-                                    .listRowSpacing(0)
-                            }
-                        }
-                        .listStyle(.plain)
-                        .padding(.top, 48)
-                        
-                        Button {
-                            Task {
-                                do {
-                                    try await insertEvents()
-//                                    savedStatus[selectedAgent] = true
-                                    if savedShiftsForAllAgents {
-                                        dismiss()
+                        GeometryReader { geometry in
+                            let columnWidth = (geometry.size.width - 162) / CGFloat(agentStore.agents.count)
+                            
+                            ScrollView {
+                                VStack(spacing: 0) {
+                                    // Header
+                                    HStack(spacing: 0) {
+                                        Text("Fecha")
+                                            .frame(width: 130, alignment: .leading)
+                                        
+                                        ForEach(agentStore.agents) { agent in
+                                            Text(agent.name)
+                                                .frame(width: columnWidth, alignment: .leading)
+                                        }
                                     }
-                                } catch {
-                                    showAlert(title: "Ha ocurrido un error al guardar los turnos.")
+                                    .font(.title3)
+                                    .fontWeight(.thin)
+                                    .padding(.horizontal)
+                                    .padding(.vertical, 8)
+                                    
+                                    // Date and shifts rows
+                                    ForEach(0..<7, id: \.self) { dayIndex in
+                                        VStack {
+                                            HStack(spacing: 0) {
+                                                // Date column
+                                                if let firstAgent = agentStore.agents.first,
+                                                   let workdays = schedule[firstAgent],
+                                                   dayIndex < workdays.count {
+                                                    VStack(alignment: .leading, spacing: 2) {
+                                                        Text(workdays[dayIndex].startDate.toDayOfWeekString)
+                                                        Text(workdays[dayIndex].startDate.toDateString)
+                                                    }
+                                                    .font(.subheadline)
+                                                    .frame(width: 130, alignment: .leading)
+                                                }
+                                                
+                                                // Agent's shift columns
+                                                ForEach(agentStore.agents) { agent in
+                                                    if let events = schedule[agent], dayIndex < events.count {
+                                                        HStack {
+                                                            VStack(alignment: .leading, spacing: 2) {
+                                                                Text(events[dayIndex].title)
+                                                                    .font(.system(size: 24, weight: .semibold, design: .monospaced))
+                                                                if let endDate = events[dayIndex].endDate {
+                                                                    Text("\(events[dayIndex].startDate.toTimeString) - \(endDate.toTimeString)")
+                                                                        .font(.caption)
+                                                                        .foregroundColor(.secondary)
+                                                                } else {
+                                                                    Text("")
+                                                                }
+                                                            }
+                                                            .overlay(alignment: .leading) {
+                                                                Circle()
+                                                                    .fill(agentStore.color(for: agent) ?? .clear)
+                                                                    .frame(width: 10, height: 10)
+                                                                    .offset(x: -20)
+                                                            }
+                                                        }
+                                                        .frame(width: columnWidth, alignment: .leading)
+                                                    }
+                                                }
+                                            }
+                                            .padding(.horizontal)
+                                            .padding(.vertical, 8)
+                                        }
+                                        .background(dayIndex.isMultiple(of: 2) ? Color.gray.opacity(0.2) : Color.clear)
+                                    }
                                 }
                             }
-                        } label: {
-//                            Label(
-//                                savedShiftsForSelectedAgent ? "Guardado" : "Guardar",
-//                                systemImage: savedShiftsForSelectedAgent ? "checkmark.circle" : "square.and.arrow.down"
-//                            )
-                            Label("Guardar", systemImage: "square.and.arrow.down")
-                            .font(.title3)
-                            .fontWeight(.semibold)
-                            .foregroundStyle(.text)
-                            .frame(height: 48)
-                            .frame(maxWidth: .infinity)
+                            .padding(.top)
                         }
-                        .buttonStyle(.borderedProminent)
-                        .buttonBorderShape(.capsule)
-                        .tint(.accent)
-//                        .disabled(savedShiftsForSelectedAgent)
-                        .padding()
                     }
                 }
             }
-            .navigationTitle(week.isEmpty ? "" : "Turnos del agente \(agentStore.selectedAgent.cf)")
             .toolbar(content: toolbarContent)
             .alertMessage(title: alertTitle, isPresented: $shouldPresentAlert)
             .task(id: agentStore.selectedAgent) {
@@ -97,12 +129,12 @@ struct ImportView: View {
     private func populateWeek() {
         isLoading = true
         do {
-            let shifts = Shift.shiftsFor(category: agentStore.selectedAgent.category)
-            
-            let fileManager = FileManager(fileURL: filename, agent: agentStore.selectedAgent, shifts: shifts)
-            try fileManager.getData()
-            if let schedule = fileManager.schedule {
-                self.week = schedule.week
+            let fileManager = AppFileManager(fileURL: filename)
+            for agent in agentStore.agents {
+                try fileManager.getData(for: agent)
+                if !fileManager.week.isEmpty {
+                    schedule[agent] = fileManager.week
+                }
             }
         } catch {
             showAlert(title: error.localizedDescription)
@@ -110,24 +142,27 @@ struct ImportView: View {
         isLoading = false
     }
     
-    private func insertEvents() async throws {
-        let events = week.map { $0.convertToEvent() }
-        for event in events {
-            if event.startDate != nil {
-                try await storeManager.saveEvent(event, calendarIdentifier: agentStore.selectedAgent.calendar.calendarIdentifier)
+    func insertEvents() async throws {
+        for agent in agentStore.agents {
+            if let events = schedule[agent] {
+                for event in events {
+                    if event.endDate != nil {
+                        try await storeManager.saveEvent(event, calendarIdentifier: agent.calendar.calendarIdentifier)
+                    }
+                }
             }
         }
     }
     
     /// Set up details of the alert message.
-    private func showAlert(title: String) {
+    func showAlert(title: String) {
         alertTitle = title
         shouldPresentAlert = true
     }
 }
 
 #Preview {
-    @Previewable @State var filename = Bundle.main.url(forResource: "08-09 GSEMANAL 2025", withExtension: "xlsx")!
+    @Previewable @State var filename = Bundle.main.url(forResource: "08-09_GSEMANAL_2025", withExtension: "xlsx")!
     ImportView(filename: filename)
         .environment(EventStoreManager())
         .environment(AgentStore())

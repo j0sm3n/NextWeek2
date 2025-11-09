@@ -18,7 +18,7 @@ struct CalendarChooserView: View {
         List {
             ForEach(calendars, id: \.self) { calendar in
                 Button {
-                    agentStore.selectedAgent.calendar = AgentCalendar(title: calendar.title, calendarIdentifier: calendar.calendarIdentifier)
+                    agentStore.selectedAgent?.calendar = AgentCalendar(title: calendar.title, calendarIdentifier: calendar.calendarIdentifier)
                     agentStore.updateCalendarAgent()
                     dismiss()
                 } label: {
@@ -27,7 +27,7 @@ struct CalendarChooserView: View {
                             .frame(width: 10, height: 10)
                             .foregroundStyle(Color(cgColor: calendar.cgColor))
                         Text(calendar.title)
-                        if calendar.calendarIdentifier == agentStore.selectedAgent.calendar.calendarIdentifier {
+                        if calendar.calendarIdentifier == agentStore.selectedAgent?.calendar.calendarIdentifier {
                             Spacer()
                             Image(systemName: "checkmark")
                         }
@@ -38,7 +38,7 @@ struct CalendarChooserView: View {
         .task {
             calendars = storeManager.dataStore.eventStore.calendars(for: .event)
         }
-        .navigationTitle("Agente \(agentStore.selectedAgent.cf)")
+        .navigationTitle("Agente \(agentStore.selectedAgent?.cf ?? 0)")
     }
 }
 

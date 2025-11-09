@@ -1,5 +1,5 @@
 //
-//  FileManager.swift
+//  AppFileManager.swift
 //  NextWeek
 //
 //  Created by Jose Antonio Mendoza on 11/3/23.
@@ -9,29 +9,29 @@ import CoreXLSX
 import Foundation
 import PDFKit
 
-class FileManager {
-    let fileURL: URL
-    let agent: Agent
-    let shifts: [Shift]
+class AppFileManager {
+    private let fileURL: URL
+//    let agent: Agent
+//    let shifts: [Shift]
     
-    var schedule: Schedule?
+    var week: [Event] = []
     
-    init(fileURL: URL, agent: Agent, shifts: [Shift]) {
+    init(fileURL: URL/*, agent: Agent, shifts: [Shift]*/) {
         self.fileURL = fileURL
-        self.agent = agent
-        self.shifts = shifts
+//        self.agent = agent
+//        self.shifts = shifts
     }
     
-    func getData() throws {
+    func getData(for agent: Agent) throws {
         if fileURL.pathExtension == "xlsx" {
-            getAgentsWeekFromXLSX()
+            getAgentsWeekFromXLSX(agent: agent)
         } else if fileURL.pathExtension == "pdf" {
-            try getAgentsWeekFromPDF()
+            try getAgentsWeekFromPDF(agent: agent)
         }
     }
     
     // MARK: - PDF functions
-    private func getAgentsWeekFromPDF() throws {
+    private func getAgentsWeekFromPDF(agent: Agent) throws {
         guard let pdfDocument = PDFDocument(url: fileURL) else {
             throw FileManagerError.cantOpenFile
         }
@@ -47,17 +47,18 @@ class FileManager {
         
         if let rowShifts = try getAgentRow(of: agent, from: fullText) {
             let monday = getDate(from: fullText)
-            var week: [WorkDay] = []
+            var week: [Event] = []
+            let shifts = Shift.shiftsFor(category: agent.category)
             
             for i in 0...6 {
-                let calendarEvent = WorkDay(
+                let event = Event(
                     shift: shifts.filter({ $0.name == rowShifts[i] }).first ?? Shift(name: rowShifts[i]),
                     date: Calendar.current.date(byAdding: .day, value: i, to: monday) ?? Date()
                 )
-                week.append(calendarEvent)
+                week.append(event)
             }
             
-            schedule = Schedule(agentCF: agent.cf, week: week)
+            self.week = week
         }
     }
     
@@ -107,25 +108,26 @@ class FileManager {
     }
     
     // MARK: - XLSX functions
-    private func getAgentsWeekFromXLSX() {
+    private func getAgentsWeekFromXLSX(agent: Agent) {
         let file = getXLSXFile()
         let monday = getDate(from: file)
         
         guard let row = getAgentRow(of: agent, from: file) else { return }
         
-        var week: [WorkDay] = []
+        var week: [Event] = []
         let rowShifts = Array(row[2...])
+        let shifts = Shift.shiftsFor(category: agent.category)
         
         for i in 0...6 {
             let shift = shifts.filter { $0.name == rowShifts[i] }.first
-            let calendarEvent = WorkDay(
+            let event = Event(
                 shift: shift ?? Shift(name: rowShifts[i]),
                 date: Calendar.current.date(byAdding: .day, value: i, to: monday) ?? Date()
             )
-            week.append(calendarEvent)
+            week.append(event)
         }
         
-        schedule = Schedule(agentCF: agent.cf, week: week)
+        self.week = week
     }
     
     private func getXLSXFile() -> XLSXFile {

@@ -15,43 +15,63 @@ struct EventList: View {
     @State private var shouldPresentError: Bool = false
     @State private var alertTitle: String?
     
-    @State var selection: Set<EKEvent> = []
-    @State var editMode: EditMode = .inactive
     @State private var selectedEvent: EKEvent?
     @State private var showEventEditViewController = false
+
+    @State var showSettings: Bool = false
     
     @State private var filename: URL?
     @State var showFileChooser: Bool = false
     
-    var filteredEvents: [EKEvent] {
-        storeManager.events.filter {
-            $0.calendar.calendarIdentifier == agentStore.selectedAgent.calendar.calendarIdentifier
+    var filteredEventsByDay: [(date: Date, events: [EKEvent])] {
+        let agentCalendarIDs: Set<String> = Set(agentStore.agents.map { $0.calendar.calendarIdentifier })
+        guard !agentCalendarIDs.isEmpty else { return [] }
+        
+        let filteredEvents = storeManager.events.filter {
+            agentCalendarIDs.contains($0.calendar.calendarIdentifier)
         }
+        
+        // Grouped by day
+        let calendar = Calendar.current
+        let grouped = Dictionary(grouping: filteredEvents) { event in
+            calendar.startOfDay(for: event.startDate)
+        }
+        
+        // Sort by date
+        let eventsByDay = grouped.sorted { $0.key < $1.key }.map { (date: $0.key, events: $0.value) }
+
+        return eventsByDay
     }
 
-    /*
-        Displays a list of events that occur within next two weeks in all the selected user's calendars.
-        Removes an event from Calendar when the user deletes it from the list.
-    */
     var body: some View {
         VStack {
             if storeManager.events.isEmpty {
                 MessageView(message: .events)
             } else {
-                AgentPicker()
-
-                List(selection: $selection) {
-                    ForEach(filteredEvents, id: \.self) { event in
-                        EventRow(event: event)
-                            .onTapGesture {
-                                selectedEvent = event
-                                showEventEditViewController.toggle()
+                List {
+                    ForEach(filteredEventsByDay, id: \.date) { day in
+                        GroupBox {
+                            ForEach(day.events, id: \.eventIdentifier) { event in
+                                EventRow(event: event)
+                                    .onTapGesture {
+                                        selectedEvent = event
+                                        showEventEditViewController.toggle()
+                                    }
                             }
+                        } label: {
+                            Text(day.date.toLongDateString)
+                                .font(.caption)
+                                .foregroundStyle(.secondary)
+                                .frame(maxWidth: .infinity)
+                        }
+                        .foregroundStyle(.primary)
+                        .backgroundStyle(.gray.opacity(0.2))
+                        .listRowInsets(EdgeInsets(top: 4, leading: 16, bottom: 4, trailing: 16))
+                        .listRowSeparator(.hidden)
                     }
                 }
-                .toolbar(content: toolbarContent)
                 .listStyle(.plain)
-                .environment(\.editMode, $editMode)
+                .toolbar(content: toolbarContent)
             }
         }
         .alertMessage(title: alertTitle, isPresented: $shouldPresentError)
@@ -73,17 +93,8 @@ struct EventList: View {
         .sheet(isPresented: $showEventEditViewController) {
             EventEditViewController(event: $selectedEvent, eventStore: storeManager.dataStore.eventStore)
         }
-    }
-    
-    /// Delete the selected event from Calendar.
-    func removeEvents(_ events: [EKEvent]) {
-        Task {
-            do {
-                try await storeManager.removeEvents(events)
-                selection.removeAll()
-            } catch {
-                showAlert(title: "Ha ocurrido un error al borrar los eventos seleccionados.")
-            }
+        .fullScreenCover(isPresented: $showSettings) {
+            SettingsView()
         }
     }
     
@@ -101,23 +112,15 @@ fileprivate struct EventRow: View {
         HStack {
             Circle()
                 .fill(event.color)
-                .frame(width: 10, height: 10)
-            
-            VStack(alignment: .leading, spacing: 7) {
-                Text(event.startDate.formatted(.dateTime.weekday().day().month().year()))
-                    .foregroundStyle(.secondary)
-                    .font(.caption)
-                Text(event.title)
-                    .foregroundStyle(.primary)
-                    .font(.headline)
-            }
+                .frame(width: 8, height: 8)
+            Text(event.title)
+                .font(.callout)
+                .fontWeight(.medium)
+                .foregroundStyle(.primary)
             Spacer()
-            VStack {
-                Spacer()
-                Text(event.fromStartDateToEndDateString)
-                    .foregroundStyle(.secondary)
-                    .font(.caption)
-            }
+            Text(event.fromStartDateToEndDateString)
+                .font(.caption)
+                .foregroundStyle(.secondary)
         }
         .contentShape(.rect)
     }

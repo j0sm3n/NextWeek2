@@ -64,7 +64,7 @@ final class EventStoreManager {
     
     func saveEvent(_ event: Event, calendarIdentifier: String) async throws {
         if let calendar = await dataStore.calendarWithIdentifier(calendarIdentifier) {
-            try await dataStore.addEvent(event, toCalendar: calendar)            
+            try await dataStore.addEvent(event, to: calendar)            
         }
     }
 }

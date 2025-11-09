@@ -8,12 +8,13 @@
 import SwiftUI
 
 struct MainView: View {
-    @Environment(AgentStore.self) var agentsStore
     @Environment(EventStoreManager.self) var storeManager
-    @State private var showSettings: Bool = false
+    @Environment(AgentStore.self) var agentStore
+
     @State private var shouldPresentAlert: Bool = false
     @State private var alertTitle: String?
-    
+    @State private var showSettings: Bool = false
+
     var body: some View {
         NavigationStack {
             VStack {
@@ -36,23 +37,15 @@ struct MainView: View {
             }
             .alertMessage(title: alertTitle, isPresented: $shouldPresentAlert)
             .navigationTitle("Próximos Eventos")
+            .fullScreenCover(isPresented: $showSettings) {
+                SettingsView()
+            }
             .task {
-                showSettings = !agentsStore.agentsHaveValidCalendar()
+                showSettings = !agentStore.agentsHaveValidCalendar()
                 do {
                     try await storeManager.setupEventStore()
                 } catch {
                     showAlert(title: "Authorization failed")
-                }
-            }
-            .fullScreenCover(isPresented: $showSettings) {
-                SettingsView()
-            }
-            .toolbar {
-                ToolbarItem(placement: .automatic) {
-                    Button("Ajustes", systemImage: "gear") {
-                        showSettings = true
-                    }
-                    
                 }
             }
         }

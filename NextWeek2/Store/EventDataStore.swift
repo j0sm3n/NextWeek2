@@ -6,6 +6,7 @@
 //
 
 import EventKit
+import SwiftUI
 
 actor EventDataStore {
     nonisolated let eventStore: EKEventStore
@@ -71,7 +72,7 @@ actor EventDataStore {
     }
     
     /// Create an event with the specified details, then save it to the user's Calendar.
-    func addEvent(_ event: Event, toCalendar calendar: EKCalendar) throws {
+    func addEvent(_ event: Event, to calendar: EKCalendar) throws {
         let newEvent = event.addEvent(store: eventStore, calendar: calendar)
         try self.eventStore.save(newEvent, span: .thisEvent)
     }

@@ -33,9 +33,6 @@ extension EKEvent {
     var fromStartDateToEndDateString: String {
         guard let startDate = self.startDate,
               let endDate = self.endDate else { return "" }
-        let formatter = DateFormatter()
-        formatter.dateStyle = .none
-        formatter.timeStyle = .short
-        return "\(formatter.string(from: startDate)) - \(formatter.string(from: endDate))"
+        return "\(startDate.toTimeString) - \(endDate.toTimeString)"
     }
 }
