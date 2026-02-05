@@ -11,44 +11,53 @@ import SwiftUI
 struct MainView: View {
     @Environment(EventStoreManager.self) var storeManager
     @Environment(AgentStore.self) var agentStore
+    @Environment(ShiftService.self) var shiftService
     @Environment(\.modelContext) private var modelContext
 
     @State private var shouldPresentAlert: Bool = false
     @State private var alertTitle: String?
     @State private var showSettings: Bool = false
-    @State private var showNoShiftsWarning: Bool = false
+
+    private var showNoShiftsWarning: Bool {
+        !shiftService.isLoading && !shiftService.hasShifts
+    }
 
     var body: some View {
         NavigationStack {
             VStack {
-                switch storeManager.authorizationStatus {
-                case .notDetermined:
-                    messageView(with: .none)
-                case .restricted:
-                    messageView(with: .restricted)
-                case .denied:
-                    messageView(with: .denied)
-                case .writeOnly:
-                    messageView(with: .upgrade)
-                case .authorized:
-                    EventList()
-                case .fullAccess:
-                    EventList()
-                @unknown default:
-                    fatalError("An error occurs.")
+                if shiftService.isLoading {
+                    ProgressView("Cargando turnos...")
+                } else {
+                    switch storeManager.authorizationStatus {
+                    case .notDetermined:
+                        messageView(with: .none)
+                    case .restricted:
+                        messageView(with: .restricted)
+                    case .denied:
+                        messageView(with: .denied)
+                    case .writeOnly:
+                        messageView(with: .upgrade)
+                    case .authorized, .fullAccess:
+                        EventList()
+                    @unknown default:
+                        fatalError("An error occurs.")
+                    }
                 }
             }
             .alertMessage(title: alertTitle, isPresented: $shouldPresentAlert)
-            .alert("Sin datos de turnos", isPresented: $showNoShiftsWarning) {
+            .alert("Sin datos de turnos", isPresented: .constant(showNoShiftsWarning)) {
                 Button("Reintentar") {
                     Task {
-                        try? await ShiftService.shared.syncIfNeeded(modelContext: modelContext)
-                        showNoShiftsWarning = await !ShiftService.shared.hasShifts(modelContext: modelContext)
+                        await shiftService.forceSync(modelContext: modelContext)
                     }
                 }
                 Button("Cancelar", role: .cancel) { }
             } message: {
-                Text("No se han podido cargar los datos de turnos. Verifica tu conexión a internet e inténtalo de nuevo.")
+                if let error = shiftService.lastError {
+                    Text(error.localizedDescription)
+                } else {
+                    Text("No se han podido cargar los datos de turnos. Verifica tu conexión a internet e inténtalo de nuevo.")
+                }
             }
             .navigationTitle("Próximos Eventos")
             .fullScreenCover(isPresented: $showSettings) {
@@ -61,7 +70,7 @@ struct MainView: View {
                 } catch {
                     showAlert(title: "Authorization failed")
                 }
-                showNoShiftsWarning = await !ShiftService.shared.hasShifts(modelContext: modelContext)
+                await shiftService.syncIfNeeded(modelContext: modelContext)
             }
         }
     }
@@ -83,4 +92,5 @@ struct MainView: View {
     MainView()
         .environment(AgentStore())
         .environment(EventStoreManager())
+        .environment(ShiftService.shared)
 }

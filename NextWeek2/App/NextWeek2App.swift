@@ -12,12 +12,18 @@ import SwiftUI
 struct NextWeek2App: App {
     @State private var storeManager = EventStoreManager()
     @State private var agentsStore = AgentStore()
+    @State private var shiftService = ShiftService.shared
 
     let modelContainer: ModelContainer
 
     init() {
-        let schema = Schema([Shift.self])
-        modelContainer = try! ModelContainer(for: schema)
+        do {
+            let schema = Schema([Shift.self])
+            let configuration = ModelConfiguration(schema: schema)
+            modelContainer = try ModelContainer(for: schema, configurations: [configuration])
+        } catch {
+            fatalError("Failed to create ModelContainer: \(error.localizedDescription)")
+        }
     }
 
     var body: some Scene {
@@ -25,10 +31,10 @@ struct NextWeek2App: App {
             MainView()
                 .environment(storeManager)
                 .environment(agentsStore)
+                .environment(shiftService)
                 .modelContainer(modelContainer)
                 .task {
                     await storeManager.listenForCalendarChanges()
-                    try? await ShiftService.shared.syncIfNeeded(modelContext: modelContainer.mainContext)
                 }
         }
     }

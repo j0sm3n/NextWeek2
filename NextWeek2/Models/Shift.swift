@@ -10,6 +10,8 @@ import SwiftData
 
 @Model
 final class Shift {
+    #Index<Shift>([\.category, \.residence])
+
     var name: String
     var startTime: Double
     var duration: Double
