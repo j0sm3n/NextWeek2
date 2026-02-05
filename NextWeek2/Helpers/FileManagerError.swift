@@ -11,6 +11,7 @@ enum FileManagerError: Error {
     case cantOpenFile
     case cantGetAgentRow
     case agentNotFound
+    case noShiftsAvailable
 }
 
 extension FileManagerError: LocalizedError {
@@ -22,6 +23,8 @@ extension FileManagerError: LocalizedError {
             return NSLocalizedString("No se ha podido extraer la fila del agente.", comment: "Agente no encontrado")
         case .agentNotFound:
             return NSLocalizedString("No se ha encontrado los turnos del agente seleccionado.", comment: "Agente no encontrado")
+        case .noShiftsAvailable:
+            return NSLocalizedString("No hay datos de turnos disponibles. Verifica tu conexión a internet.", comment: "Sin datos de turnos")
         }
     }
 }

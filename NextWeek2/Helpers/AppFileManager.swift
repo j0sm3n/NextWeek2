@@ -8,48 +8,51 @@
 import CoreXLSX
 import Foundation
 import PDFKit
+import SwiftData
 
 class AppFileManager {
     private let fileURL: URL
-//    let agent: Agent
-//    let shifts: [Shift]
-    
+    private let modelContext: ModelContext
+
     var week: [Event] = []
-    
-    init(fileURL: URL/*, agent: Agent, shifts: [Shift]*/) {
+
+    init(fileURL: URL, modelContext: ModelContext) {
         self.fileURL = fileURL
-//        self.agent = agent
-//        self.shifts = shifts
+        self.modelContext = modelContext
     }
-    
+
     func getData(for agent: Agent) throws {
+        let shifts = Shift.shiftsFor(category: agent.category, location: agent.location, from: modelContext)
+        guard !shifts.isEmpty else {
+            throw FileManagerError.noShiftsAvailable
+        }
+
         if fileURL.pathExtension == "xlsx" {
-            getAgentsWeekFromXLSX(agent: agent)
+            getAgentsWeekFromXLSX(agent: agent, shifts: shifts)
         } else if fileURL.pathExtension == "pdf" {
-            try getAgentsWeekFromPDF(agent: agent)
+            try getAgentsWeekFromPDF(agent: agent, shifts: shifts)
         }
     }
-    
+
     // MARK: - PDF functions
-    private func getAgentsWeekFromPDF(agent: Agent) throws {
+    private func getAgentsWeekFromPDF(agent: Agent, shifts: [Shift]) throws {
         guard let pdfDocument = PDFDocument(url: fileURL) else {
             throw FileManagerError.cantOpenFile
         }
-        
+
         var fullText: String = ""
-        
+
         for pageIndex in 0..<pdfDocument.pageCount {
             if let page = pdfDocument.page(at: pageIndex),
                let pageText = page.string {
                 fullText += pageText
             }
         }
-        
+
         if let rowShifts = try getAgentRow(of: agent, from: fullText) {
             let monday = getDate(from: fullText)
             var week: [Event] = []
-            let shifts = Shift.shiftsFor(category: agent.category)
-            
+
             for i in 0...6 {
                 let event = Event(
                     shift: shifts.filter({ $0.name == rowShifts[i] }).first ?? Shift(name: rowShifts[i]),
@@ -57,11 +60,11 @@ class AppFileManager {
                 )
                 week.append(event)
             }
-            
+
             self.week = week
         }
     }
-    
+
     private func getDate(from text: String) -> Date {
         guard let startDateString = extractLine(startingWith: "DÍA INÍCIO", from: text) else {
             fatalError("Couldn't get start date in text")
@@ -71,7 +74,7 @@ class AppFileManager {
             formatter.dateFormat = "dd-MM-yy"
             formatter.locale = Locale(identifier: "es_ES")
             formatter.timeZone = TimeZone.current
-            
+
             if let date = formatter.date(from: startDate) {
                 return date
             } else {
@@ -80,12 +83,12 @@ class AppFileManager {
         }
         return .now
     }
-    
+
     private func getAgentRow(of agent: Agent, from text: String) throws -> [String]? {
         guard let agentRow = extractLine(startingWith: String(agent.cf), from: text) else {
             throw FileManagerError.agentNotFound
         }
-        
+
         let agentRowComponents = agentRow.components(separatedBy: " ")
         let rowShifts = Array(agentRowComponents.suffix(7))
         guard rowShifts.count == 7 else {
@@ -93,31 +96,30 @@ class AppFileManager {
         }
         return rowShifts
     }
-    
+
     private func extractLine(startingWith prefix: String, from text: String) -> String? {
         let lines = text.components(separatedBy: .newlines)
-        
+
         for line in lines {
             print(line)
             if line.trimmingCharacters(in: .whitespaces).hasPrefix(prefix) {
                 return line
             }
         }
-        
+
         return nil
     }
-    
+
     // MARK: - XLSX functions
-    private func getAgentsWeekFromXLSX(agent: Agent) {
+    private func getAgentsWeekFromXLSX(agent: Agent, shifts: [Shift]) {
         let file = getXLSXFile()
         let monday = getDate(from: file)
-        
+
         guard let row = getAgentRow(of: agent, from: file) else { return }
-        
+
         var week: [Event] = []
         let rowShifts = Array(row[2...])
-        let shifts = Shift.shiftsFor(category: agent.category)
-        
+
         for i in 0...6 {
             let shift = shifts.filter { $0.name == rowShifts[i] }.first
             let event = Event(
@@ -126,17 +128,17 @@ class AppFileManager {
             )
             week.append(event)
         }
-        
+
         self.week = week
     }
-    
+
     private func getXLSXFile() -> XLSXFile {
         guard let file = XLSXFile(filepath: fileURL.relativePath) else {
             fatalError("XLSX file at \(fileURL) is corrupted or does not exist")
         }
         return file
     }
-    
+
     private func getWorksheet(from file: XLSXFile, sheetName: SheetName) throws -> Worksheet? {
         do {
             let workbook = try file.parseWorkbooks()
@@ -150,7 +152,7 @@ class AppFileManager {
         }
         return nil
     }
-    
+
     private func getDate(from file: XLSXFile) -> Date {
         guard let worksheet = try? getWorksheet(from: file, sheetName: .fecha) else {
             return .now
@@ -159,10 +161,10 @@ class AppFileManager {
             .compactMap { $0.dateValue }
         return columnCDates.first ?? .now
     }
-    
+
     private func getAgentRow(of agent: Agent, from file: XLSXFile) -> [String]? {
         var sheet: SheetName
-        
+
         switch (agent.category, agent.location) {
         case (.maquinista, .benidorm):
             sheet = .maquinistaBenidorm
@@ -172,12 +174,12 @@ class AppFileManager {
             // TODO: Change fatalError to a notification
             fatalError("This category or location is not implemented yet.")
         }
-        
+
         guard let worksheet = try? getWorksheet(from: file, sheetName: sheet) else {
             print("No se ha encontrado nada de nada")
             return nil
         }
-        
+
         do {
             if let sharedStrings = try file.parseSharedStrings() {
                 let rows = worksheet.data?.rows.filter { row in
@@ -188,12 +190,12 @@ class AppFileManager {
                     }
                     return false
                 }
-                
+
                 guard rows?.count == 1 else {
                     print("Hay más de una fila que cumple con agente = \(agent.cf)")
                     return nil
                 }
-                
+
                 let cells = rows![0].cells.filter { $0.value?.isEmpty == false }
                 var cellsValues: [String] = []
                 let cellsSharedStrings = cells.compactMap { $0.stringValue(sharedStrings)}
@@ -213,4 +215,3 @@ class AppFileManager {
         }
     }
 }
-
