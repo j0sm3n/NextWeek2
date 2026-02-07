@@ -1,0 +1,9 @@
+{
+  "permissions": {
+    "allow": [
+      "Bash(git checkout:*)",
+      "WebFetch(domain:raw.githubusercontent.com)",
+      "Bash(xcodebuild:*)"
+    ]
+  }
+}
