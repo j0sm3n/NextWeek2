@@ -11,17 +11,24 @@ import EventKit
 
 @Observable
 final class AgentStore {
-    private let eventStore = EKEventStore()
-
     var agents: [Agent] = []
     var selectedAgent: Agent?
     
     private let userDefaults: UserDefaults = .standard
     private let agentsKey: String = "agents"
     
+    // Shared event store instance injected from EventStoreManager
+    private var eventStore: EKEventStore {
+        EventStoreManager.shared.dataStore.eventStore
+    }
+    
+    // Cache for calendar colors to avoid repeated lookups
+    private var colorCache: [String: Color] = [:]
+    
     init() {
         self.agents = getAgents()
         self.selectedAgent = agents.first
+        refreshColorCache()
     }
     
     func agentWithCF(_ cf: Int) -> Agent? {
@@ -66,13 +73,38 @@ final class AgentStore {
             agents[index].calendar.title = selectedAgent.calendar.title
             agents[index].calendar.calendarIdentifier = selectedAgent.calendar.calendarIdentifier
             updateAgents()
+            updateColorCache()
         }
     }
     
     func color(for agent: Agent) -> Color? {
+        // Return cached color if available
+        if let cachedColor = colorCache[agent.calendar.calendarIdentifier] {
+            return cachedColor
+        }
+        
+        // Otherwise fetch and cache
         guard let calendar = eventStore.calendar(withIdentifier: agent.calendar.calendarIdentifier) else {
             return nil
         }
-        return Color(cgColor: calendar.cgColor)
+        
+        let color = Color(cgColor: calendar.cgColor)
+        colorCache[agent.calendar.calendarIdentifier] = color
+        return color
+    }
+    
+    /// Refreshes the color cache for all agent calendars
+    private func refreshColorCache() {
+        colorCache.removeAll()
+        for agent in agents {
+            if let calendar = eventStore.calendar(withIdentifier: agent.calendar.calendarIdentifier) {
+                colorCache[agent.calendar.calendarIdentifier] = Color(cgColor: calendar.cgColor)
+            }
+        }
+    }
+    
+    /// Call this when agents or their calendars change
+    func updateColorCache() {
+        refreshColorCache()
     }
 }
