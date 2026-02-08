@@ -94,28 +94,23 @@ struct RootTabView: View {
     
     @ViewBuilder
     private var importView: some View {
-        NavigationStack {
-            VStack {
-                if shiftService.isLoading {
-                    ProgressView("Cargando turnos...")
-                } else {
-                    switch storeManager.authorizationStatus {
-                    case .notDetermined:
-                        messageView(with: .none)
-                    case .restricted:
-                        messageView(with: .restricted)
-                    case .denied:
-                        messageView(with: .denied)
-                    case .writeOnly:
-                        messageView(with: .upgrade)
-                    case .authorized, .fullAccess:
-                        ImportView()
-                    @unknown default:
-                        fatalError("An error occurs.")
-                    }
-                }
+        if shiftService.isLoading {
+            ProgressView("Cargando turnos...")
+        } else {
+            switch storeManager.authorizationStatus {
+            case .notDetermined:
+                messageView(with: .none)
+            case .restricted:
+                messageView(with: .restricted)
+            case .denied:
+                messageView(with: .denied)
+            case .writeOnly:
+                messageView(with: .upgrade)
+            case .authorized, .fullAccess:
+                ImportContainerView()
+            @unknown default:
+                fatalError("An error occurs.")
             }
-            .navigationTitle("Importar Turnos")
         }
     }
     

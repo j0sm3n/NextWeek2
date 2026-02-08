@@ -13,36 +13,37 @@ struct ImportContainerView: View {
     
     var body: some View {
         NavigationStack {
-            if let file = selectedFile {
+            ContentUnavailableView {
+                Label("Importar Horario", systemImage: "calendar.badge.plus")
+            } description: {
+                Text("Selecciona un archivo PDF o Excel con los horarios de la semana")
+            } actions: {
+                Button {
+                    showingFilePicker = true
+                } label: {
+                    Text("Seleccionar Archivo")
+                }
+                .buttonStyle(.glassProminent)
+            }
+            .navigationTitle("Importar Turnos")
+            .fileImporter(
+                isPresented: $showingFilePicker,
+                allowedContentTypes: [.pdf, .spreadsheet],
+                allowsMultipleSelection: false
+            ) { result in
+                switch result {
+                case .success(let files):
+                    if let file = files.first, file.startAccessingSecurityScopedResource() {
+                        selectedFile = file
+                    }
+                case .failure(let error):
+                    print("Error selecting file: \(error.localizedDescription)")
+                }
+            }
+            .sheet(item: $selectedFile) {
+                selectedFile?.stopAccessingSecurityScopedResource()
+            } content: { file in
                 ImportView(filename: file)
-            } else {
-                ContentUnavailableView {
-                    Label("Importar Horario", systemImage: "calendar.badge.plus")
-                } description: {
-                    Text("Selecciona un archivo PDF o Excel con los horarios de la semana")
-                } actions: {
-                    Button {
-                        showingFilePicker = true
-                    } label: {
-                        Text("Seleccionar Archivo")
-                    }
-                    .buttonStyle(GlassProminentButtonStyle())
-                }
-                .navigationTitle("Importar Turnos")
-                .fileImporter(
-                    isPresented: $showingFilePicker,
-                    allowedContentTypes: [.pdf, .xlsx],
-                    allowsMultipleSelection: false
-                ) { result in
-                    switch result {
-                    case .success(let files):
-                        if let file = files.first {
-                            selectedFile = file
-                        }
-                    case .failure(let error):
-                        print("Error selecting file: \(error.localizedDescription)")
-                    }
-                }
             }
         }
     }
