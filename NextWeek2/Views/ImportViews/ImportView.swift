@@ -46,77 +46,7 @@ struct ImportView: View {
                         )
                         .offset(y: -60)
                     } else {
-                        GeometryReader { geometry in
-                            let columnWidth = (geometry.size.width - 162) / CGFloat(agentStore.agents.count)
-                            
-                            ScrollView {
-                                VStack(spacing: 0) {
-                                    // Header
-                                    HStack(spacing: 0) {
-                                        Text("Fecha")
-                                            .frame(width: 130, alignment: .leading)
-                                        
-                                        ForEach(agentStore.agents) { agent in
-                                            Text(agent.name)
-                                                .frame(width: columnWidth, alignment: .leading)
-                                        }
-                                    }
-                                    .font(.title3)
-                                    .fontWeight(.thin)
-                                    .padding(.horizontal)
-                                    .padding(.vertical, 8)
-                                    
-                                    // Date and shifts rows
-                                    ForEach(0..<7, id: \.self) { dayIndex in
-                                        VStack {
-                                            HStack(spacing: 0) {
-                                                // Date column
-                                                if let firstAgent = agentStore.agents.first,
-                                                   let workdays = schedule[firstAgent],
-                                                   dayIndex < workdays.count {
-                                                    VStack(alignment: .leading, spacing: 2) {
-                                                        Text(workdays[dayIndex].startDate.toDayOfWeekString)
-                                                        Text(workdays[dayIndex].startDate.toDateString)
-                                                    }
-                                                    .font(.subheadline)
-                                                    .frame(width: 130, alignment: .leading)
-                                                }
-                                                
-                                                // Agent's shift columns
-                                                ForEach(agentStore.agents) { agent in
-                                                    if let events = schedule[agent], dayIndex < events.count {
-                                                        HStack {
-                                                            VStack(alignment: .leading, spacing: 2) {
-                                                                Text(events[dayIndex].title)
-                                                                    .font(.system(size: 24, weight: .semibold, design: .monospaced))
-                                                                if let endDate = events[dayIndex].endDate {
-                                                                    Text("\(events[dayIndex].startDate.toTimeString) - \(endDate.toTimeString)")
-                                                                        .font(.caption)
-                                                                        .foregroundColor(.secondary)
-                                                                } else {
-                                                                    Text("")
-                                                                }
-                                                            }
-                                                            .overlay(alignment: .leading) {
-                                                                Circle()
-                                                                    .fill(agentStore.color(for: agent) ?? .clear)
-                                                                    .frame(width: 10, height: 10)
-                                                                    .offset(x: -20)
-                                                            }
-                                                        }
-                                                        .frame(width: columnWidth, alignment: .leading)
-                                                    }
-                                                }
-                                            }
-                                            .padding(.horizontal)
-                                            .padding(.vertical, 8)
-                                        }
-                                        .background(dayIndex.isMultiple(of: 2) ? Color.gray.opacity(0.2) : Color.clear)
-                                    }
-                                }
-                            }
-                            .padding(.top)
-                        }
+                        ScheduleTableView(schedule: schedule)
                     }
                 }
             }
