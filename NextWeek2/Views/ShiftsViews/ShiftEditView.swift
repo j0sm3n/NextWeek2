@@ -17,10 +17,8 @@ struct ShiftEditView: View {
     let location: Location
     
     @State private var name: String
-    @State private var startHour: Int
-    @State private var startMinute: Int
-    @State private var durationHours: Int
-    @State private var durationMinutes: Int
+    @State private var startTime: Date
+    @State private var duration: TimeInterval
     
     private var isEditing: Bool {
         shift != nil
@@ -28,7 +26,7 @@ struct ShiftEditView: View {
     
     private var canSave: Bool {
         !name.trimmingCharacters(in: .whitespaces).isEmpty &&
-        (durationHours > 0 || durationMinutes > 0)
+        duration > 0
     }
     
     init(shift: Shift? = nil, category: Category, location: Location) {
@@ -36,22 +34,22 @@ struct ShiftEditView: View {
         self.category = category
         self.location = location
         
-        if let shift = shift {
+        if let shift {
             _name = State(initialValue: shift.name)
             
-            let startSeconds = Int(shift.startTime)
-            _startHour = State(initialValue: startSeconds / 3600)
-            _startMinute = State(initialValue: (startSeconds % 3600) / 60)
-            
-            let durationSeconds = Int(shift.duration)
-            _durationHours = State(initialValue: durationSeconds / 3600)
-            _durationMinutes = State(initialValue: (durationSeconds % 3600) / 60)
+            // Create a date from the start time (seconds since midnight)
+            let calendar = Calendar.current
+            let today = calendar.startOfDay(for: Date())
+            _startTime = State(initialValue: today.addingTimeInterval(shift.startTime))
+            _duration = State(initialValue: shift.duration)
         } else {
             _name = State(initialValue: "")
-            _startHour = State(initialValue: 8)
-            _startMinute = State(initialValue: 0)
-            _durationHours = State(initialValue: 8)
-            _durationMinutes = State(initialValue: 0)
+            
+            // Default to 8:00 AM
+            let calendar = Calendar.current
+            let today = calendar.startOfDay(for: Date())
+            _startTime = State(initialValue: today.addingTimeInterval(8 * 3600))
+            _duration = State(initialValue: 7.5 * 3600) // 7:30 hours
         }
     }
     
@@ -63,32 +61,28 @@ struct ShiftEditView: View {
                         .autocorrectionDisabled()
                 }
                 
-                Section("Hora de Inicio") {
-                    Picker("Hora", selection: $startHour) {
-                        ForEach(0..<24, id: \.self) { hour in
-                            Text("\(hour)").tag(hour)
-                        }
-                    }
-                    
-                    Picker("Minutos", selection: $startMinute) {
-                        ForEach([0, 15, 30, 45], id: \.self) { minute in
-                            Text(String(format: "%02d", minute)).tag(minute)
-                        }
-                    }
-                }
-                
-                Section("Duración") {
-                    Picker("Horas", selection: $durationHours) {
-                        ForEach(0..<24, id: \.self) { hour in
-                            Text("\(hour)h").tag(hour)
-                        }
-                    }
-                    
-                    Picker("Minutos", selection: $durationMinutes) {
-                        ForEach([0, 15, 30, 45], id: \.self) { minute in
-                            Text("\(minute)m").tag(minute)
-                        }
-                    }
+                Section("Horario") {
+                    DatePicker(
+                        "Hora de inicio",
+                        selection: $startTime,
+                        displayedComponents: .hourAndMinute
+                    )
+                    DatePicker(
+                        "Duración",
+                        selection: Binding(
+                            get: {
+                                let calendar = Calendar.current
+                                let today = calendar.startOfDay(for: Date())
+                                return today.addingTimeInterval(duration)
+                            },
+                            set: { newValue in
+                                let calendar = Calendar.current
+                                let midnight = calendar.startOfDay(for: newValue)
+                                duration = newValue.timeIntervalSince(midnight)
+                            }
+                        ),
+                        displayedComponents: .hourAndMinute
+                    )
                 }
                 
                 Section {
@@ -108,13 +102,13 @@ struct ShiftEditView: View {
             .navigationBarTitleDisplayMode(.inline)
             .toolbar {
                 ToolbarItem(placement: .cancellationAction) {
-                    Button("Cancelar") {
+                    Button(role: .cancel) {
                         dismiss()
                     }
                 }
                 
                 ToolbarItem(placement: .confirmationAction) {
-                    Button("Guardar") {
+                    Button(role: .confirm) {
                         saveShift()
                     }
                     .disabled(!canSave)
@@ -123,20 +117,33 @@ struct ShiftEditView: View {
         }
     }
     
+    private var formattedDuration: String {
+        let hours = Int(duration) / 3600
+        let minutes = (Int(duration) % 3600) / 60
+        
+        if minutes == 0 {
+            return "\(hours)h"
+        } else {
+            return "\(hours)h \(minutes)m"
+        }
+    }
+    
     private func saveShift() {
-        let startTimeInterval = Double(startHour * 3600 + startMinute * 60)
-        let durationInterval = Double(durationHours * 3600 + durationMinutes * 60)
+        // Calculate seconds since midnight for start time
+        let calendar = Calendar.current
+        let midnight = calendar.startOfDay(for: startTime)
+        let startTimeInterval = startTime.timeIntervalSince(midnight)
         
         if let existingShift = shift {
             existingShift.name = name.trimmingCharacters(in: .whitespaces)
             existingShift.startTime = startTimeInterval
-            existingShift.duration = durationInterval
+            existingShift.duration = duration
             existingShift.isUserCreated = true
         } else {
             let newShift = Shift(
                 name: name.trimmingCharacters(in: .whitespaces),
                 startTime: startTimeInterval,
-                duration: durationInterval,
+                duration: duration,
                 category: category.rawValue,
                 residence: location.rawValue,
                 isUserCreated: true

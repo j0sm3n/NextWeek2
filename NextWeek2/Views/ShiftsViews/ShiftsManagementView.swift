@@ -16,30 +16,18 @@ struct ShiftsManagementView: View {
     @State private var selectedLocation: Location = .benidorm
     @State private var showingAddSheet = false
     @State private var shiftToEdit: Shift?
-    @State private var searchText = ""
     
     private var filteredShifts: [Shift] {
         let categoryFiltered = shifts.filter {
             $0.category == selectedCategory.rawValue &&
             $0.residence == selectedLocation.rawValue
         }
-        
-        if searchText.isEmpty {
-            return categoryFiltered.sorted { $0.name < $1.name }
-        } else {
-            return categoryFiltered.filter {
-                $0.name.localizedCaseInsensitiveContains(searchText)
-            }.sorted { $0.name < $1.name }
-        }
+        return categoryFiltered.sorted { $0.name < $1.name }
     }
     
     var body: some View {
         NavigationStack {
             VStack(spacing: 0) {
-                // Filter Section with Liquid Glass
-                filterSection
-                
-                // Shifts List
                 if filteredShifts.isEmpty {
                     emptyStateView
                 } else {
@@ -47,7 +35,9 @@ struct ShiftsManagementView: View {
                 }
             }
             .navigationTitle("Gestión de Turnos")
-            .searchable(text: $searchText, prompt: "Buscar turno")
+            .navigationBarTitleDisplayMode(.inline)
+            .toolbarTitleMenu { filterSection }
+            .navigationSubtitle("\(selectedCategory.rawValue) \(selectedLocation.rawValue)")
             .toolbar {
                 ToolbarItem(placement: .primaryAction) {
                     Button {
@@ -74,51 +64,39 @@ struct ShiftsManagementView: View {
     }
     
     private var filterSection: some View {
-        GlassEffectContainer(spacing: 12) {
-            VStack(spacing: 12) {
-                // Category Picker
-                HStack(spacing: 12) {
-                    ForEach(Category.allCases, id: \.self) { category in
-                        Button {
-                            withAnimation(.smooth) {
-                                selectedCategory = category
-                            }
-                        } label: {
+        Group {
+            Section("Categoría") {
+                ForEach(Category.allCases, id: \.self) { category in
+                    Button {
+                        withAnimation {
+                            selectedCategory = category
+                        }
+                    } label: {
+                        if selectedCategory == category {
+                            Label(category.rawValue, systemImage: "checkmark")
+                        } else {
                             Text(category.rawValue)
-                                .font(.subheadline)
-                                .fontWeight(.medium)
-                                .frame(maxWidth: .infinity)
-                                .padding(.vertical, 8)
                         }
-                        .buttonStyle(GlassButtonStyle())
-                        .opacity(selectedCategory == category ? 1.0 : 0.6)
                     }
                 }
-                .glassEffect()
-                
-                // Location Picker
-                HStack(spacing: 12) {
-                    ForEach(Location.allCases, id: \.self) { location in
-                        Button {
-                            withAnimation(.smooth) {
-                                selectedLocation = location
-                            }
-                        } label: {
-                            Text(location.rawValue)
-                                .font(.subheadline)
-                                .fontWeight(.medium)
-                                .frame(maxWidth: .infinity)
-                                .padding(.vertical, 8)
-                        }
-                        .buttonStyle(GlassButtonStyle())
-                        .opacity(selectedLocation == location ? 1.0 : 0.6)
-                    }
-                }
-                .glassEffect()
             }
-            .padding()
+
+            Section("Residencia") {
+                ForEach(Location.allCases, id: \.self) { location in
+                    Button {
+                        withAnimation {
+                            selectedLocation = location
+                        }
+                    } label: {
+                        if selectedLocation == location {
+                            Label(location.rawValue, systemImage: "checkmark")
+                        } else {
+                            Text(location.rawValue)
+                        }
+                    }
+                }
+            }
         }
-        .background(Color(uiColor: .systemGroupedBackground))
     }
     
     private var emptyStateView: some View {
