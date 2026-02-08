@@ -66,7 +66,7 @@ struct EventList: View {
                 }
                 .listStyle(.plain)
                 .toolbar {
-                    ToolbarItem(placement: .topBarLeading) {
+                    ToolbarItem(placement: .primaryAction) {
                         Button("Ajustes", systemImage: "gear") {
                             showSettings = true
                         }
