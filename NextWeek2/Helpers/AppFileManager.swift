@@ -28,7 +28,7 @@ class AppFileManager {
         }
 
         if fileURL.pathExtension == "xlsx" {
-            getAgentsWeekFromXLSX(agent: agent, shifts: shifts)
+            try getAgentsWeekFromXLSX(agent: agent, shifts: shifts)
         } else if fileURL.pathExtension == "pdf" {
             try getAgentsWeekFromPDF(agent: agent, shifts: shifts)
         }
@@ -50,7 +50,7 @@ class AppFileManager {
         }
 
         if let rowShifts = try getAgentRow(of: agent, from: fullText) {
-            let monday = getDate(from: fullText)
+            let monday = try getDate(from: fullText)
             var week: [Event] = []
 
             for i in 0...6 {
@@ -65,9 +65,9 @@ class AppFileManager {
         }
     }
 
-    private func getDate(from text: String) -> Date {
+    private func getDate(from text: String) throws -> Date {
         guard let startDateString = extractLine(startingWith: "DÍA INÍCIO", from: text) else {
-            fatalError("Couldn't get start date in text")
+            throw FileManagerError.cantParseDate
         }
         if let startDate = startDateString.components(separatedBy: " ").last {
             let formatter = DateFormatter()
@@ -78,10 +78,10 @@ class AppFileManager {
             if let date = formatter.date(from: startDate) {
                 return date
             } else {
-                fatalError("Coludn't parse date \(startDate)")
+                throw FileManagerError.cantParseDate
             }
         }
-        return .now
+        throw FileManagerError.cantParseDate
     }
 
     private func getAgentRow(of agent: Agent, from text: String) throws -> [String]? {
@@ -111,11 +111,13 @@ class AppFileManager {
     }
 
     // MARK: - XLSX functions
-    private func getAgentsWeekFromXLSX(agent: Agent, shifts: [Shift]) {
-        let file = getXLSXFile()
+    private func getAgentsWeekFromXLSX(agent: Agent, shifts: [Shift]) throws {
+        let file = try getXLSXFile()
         let monday = getDate(from: file)
 
-        guard let row = getAgentRow(of: agent, from: file) else { return }
+        guard let row = try getAgentRow(of: agent, from: file) else { 
+            throw FileManagerError.agentNotFound
+        }
 
         var week: [Event] = []
         let rowShifts = Array(row[2...])
@@ -132,9 +134,9 @@ class AppFileManager {
         self.week = week
     }
 
-    private func getXLSXFile() -> XLSXFile {
+    private func getXLSXFile() throws -> XLSXFile {
         guard let file = XLSXFile(filepath: fileURL.relativePath) else {
-            fatalError("XLSX file at \(fileURL) is corrupted or does not exist")
+            throw FileManagerError.corruptedXLSXFile
         }
         return file
     }
@@ -162,7 +164,7 @@ class AppFileManager {
         return columnCDates.first ?? .now
     }
 
-    private func getAgentRow(of agent: Agent, from file: XLSXFile) -> [String]? {
+    private func getAgentRow(of agent: Agent, from file: XLSXFile) throws -> [String]? {
         var sheet: SheetName
 
         switch (agent.category, agent.location) {
@@ -171,8 +173,7 @@ class AppFileManager {
         case (.usi, .benidorm):
             sheet = .usiBenidorm
         default:
-            // TODO: Change fatalError to a notification
-            fatalError("This category or location is not implemented yet.")
+            throw FileManagerError.categoryNotImplemented
         }
 
         guard let worksheet = try? getWorksheet(from: file, sheetName: sheet) else {
