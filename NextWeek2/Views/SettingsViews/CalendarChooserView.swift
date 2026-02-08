@@ -43,7 +43,8 @@ struct CalendarChooserView: View {
 }
 
 #Preview {
-    CalendarChooserView()
-        .environment(EventStoreManager())
-        .environment(AgentStore())
+    let eventStoreManager = EventStoreManager()
+    return CalendarChooserView()
+        .environment(eventStoreManager)
+        .environment(AgentStore(eventStore: eventStoreManager.dataStore.eventStore))
 }

@@ -11,12 +11,18 @@ import SwiftUI
 @main
 struct NextWeek2App: App {
     @State private var storeManager = EventStoreManager()
-    @State private var agentsStore = AgentStore()
+    @State private var agentsStore: AgentStore
     @State private var shiftService = ShiftService.shared
 
     let modelContainer: ModelContainer
 
     init() {
+        // Initialize AgentStore with the shared event store
+        let eventStoreManager = EventStoreManager()
+        _storeManager = State(initialValue: eventStoreManager)
+        _agentsStore = State(initialValue: AgentStore(eventStore: eventStoreManager.dataStore.eventStore))
+        
+        // Initialize model container
         do {
             let schema = Schema([Shift.self])
             let configuration = ModelConfiguration(

@@ -128,9 +128,10 @@ struct RootTabView: View {
 }
 
 #Preview {
-    RootTabView()
-        .environment(AgentStore())
-        .environment(EventStoreManager())
+    let eventStoreManager = EventStoreManager()
+    return RootTabView()
+        .environment(AgentStore(eventStore: eventStoreManager.dataStore.eventStore))
+        .environment(eventStoreManager)
         .environment(ShiftService.shared)
         .modelContainer(for: Shift.self, inMemory: true)
 }

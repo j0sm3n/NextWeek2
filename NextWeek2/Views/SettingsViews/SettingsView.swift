@@ -59,6 +59,8 @@ struct SettingsView: View {
 }
 
 #Preview {
-    SettingsView()
-        .environment(AgentStore())
+    let eventStoreManager = EventStoreManager()
+    return SettingsView()
+        .environment(eventStoreManager)
+        .environment(AgentStore(eventStore: eventStoreManager.dataStore.eventStore))
 }

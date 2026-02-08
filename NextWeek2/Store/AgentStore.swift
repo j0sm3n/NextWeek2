@@ -17,15 +17,14 @@ final class AgentStore {
     private let userDefaults: UserDefaults = .standard
     private let agentsKey: String = "agents"
     
-    // Shared event store instance injected from EventStoreManager
-    private var eventStore: EKEventStore {
-        EventStoreManager.shared.dataStore.eventStore
-    }
+    // Event store instance passed from EventStoreManager
+    private let eventStore: EKEventStore
     
     // Cache for calendar colors to avoid repeated lookups
     private var colorCache: [String: Color] = [:]
     
-    init() {
+    init(eventStore: EKEventStore = EKEventStore()) {
+        self.eventStore = eventStore
         self.agents = getAgents()
         self.selectedAgent = agents.first
         refreshColorCache()

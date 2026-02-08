@@ -50,7 +50,8 @@ struct ImportContainerView: View {
 }
 
 #Preview {
-    ImportContainerView()
-        .environment(EventStoreManager())
-        .environment(AgentStore())
+    let eventStoreManager = EventStoreManager()
+    return ImportContainerView()
+        .environment(eventStoreManager)
+        .environment(AgentStore(eventStore: eventStoreManager.dataStore.eventStore))
 }

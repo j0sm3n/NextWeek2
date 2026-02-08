@@ -95,7 +95,8 @@ struct ImportView: View {
 
 #Preview {
     @Previewable @State var filename = Bundle.main.url(forResource: "08-09_GSEMANAL_2025", withExtension: "xlsx")!
-    ImportView(filename: filename)
-        .environment(EventStoreManager())
-        .environment(AgentStore())
+    let eventStoreManager = EventStoreManager()
+    return ImportView(filename: filename)
+        .environment(eventStoreManager)
+        .environment(AgentStore(eventStore: eventStoreManager.dataStore.eventStore))
 }

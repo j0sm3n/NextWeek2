@@ -10,9 +10,6 @@ import EventKit
 @MainActor
 @Observable
 final class EventStoreManager {
-    /// Shared instance for accessing the event store throughout the app
-    static let shared = EventStoreManager()
-    
     /// Contains fetched events when the app receives a full-acces authorization status.
     var events: [EKEvent]
     
