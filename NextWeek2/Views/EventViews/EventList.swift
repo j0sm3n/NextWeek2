@@ -14,28 +14,10 @@ struct EventList: View {
     
     @State private var selectedEvent: EKEvent?
     @State private var showEventEditViewController = false
-
     @State var showSettings: Bool = false
     
-    var filteredEventsByDay: [(date: Date, events: [EKEvent])] {
-        let agentCalendarIDs: Set<String> = Set(agentStore.agents.map { $0.calendar.calendarIdentifier })
-        guard !agentCalendarIDs.isEmpty else { return [] }
-        
-        let filteredEvents = storeManager.events.filter {
-            agentCalendarIDs.contains($0.calendar.calendarIdentifier)
-        }
-        
-        // Grouped by day
-        let calendar = Calendar.current
-        let grouped = Dictionary(grouping: filteredEvents) { event in
-            calendar.startOfDay(for: event.startDate)
-        }
-        
-        // Sort by date
-        let eventsByDay = grouped.sorted { $0.key < $1.key }.map { (date: $0.key, events: $0.value) }
-
-        return eventsByDay
-    }
+    // Cached filtered events to avoid recomputation on every render
+    @State private var filteredEventsByDay: [(date: Date, events: [EKEvent])] = []
 
     var body: some View {
         VStack {
@@ -80,6 +62,36 @@ struct EventList: View {
         .fullScreenCover(isPresented: $showSettings) {
             SettingsView()
         }
+        .onChange(of: storeManager.events) { _, _ in
+            updateFilteredEvents()
+        }
+        .onChange(of: agentStore.agents) { _, _ in
+            updateFilteredEvents()
+        }
+        .onAppear {
+            updateFilteredEvents()
+        }
+    }
+    
+    private func updateFilteredEvents() {
+        let agentCalendarIDs: Set<String> = Set(agentStore.agents.map { $0.calendar.calendarIdentifier })
+        guard !agentCalendarIDs.isEmpty else {
+            filteredEventsByDay = []
+            return
+        }
+        
+        let filteredEvents = storeManager.events.filter {
+            agentCalendarIDs.contains($0.calendar.calendarIdentifier)
+        }
+        
+        // Grouped by day
+        let calendar = Calendar.current
+        let grouped = Dictionary(grouping: filteredEvents) { event in
+            calendar.startOfDay(for: event.startDate)
+        }
+        
+        // Sort by date
+        filteredEventsByDay = grouped.sorted { $0.key < $1.key }.map { (date: $0.key, events: $0.value) }
     }
 }
 
