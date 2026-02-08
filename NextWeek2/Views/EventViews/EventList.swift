@@ -12,16 +12,10 @@ struct EventList: View {
     @Environment(EventStoreManager.self) var storeManager
     @Environment(AgentStore.self) var agentStore
     
-    @State private var shouldPresentError: Bool = false
-    @State private var alertTitle: String?
-    
     @State private var selectedEvent: EKEvent?
     @State private var showEventEditViewController = false
 
     @State var showSettings: Bool = false
-    
-    @State private var filename: URL?
-    @State var showFileChooser: Bool = false
     
     var filteredEventsByDay: [(date: Date, events: [EKEvent])] {
         let agentCalendarIDs: Set<String> = Set(agentStore.agents.map { $0.calendar.calendarIdentifier })
@@ -71,37 +65,21 @@ struct EventList: View {
                     }
                 }
                 .listStyle(.plain)
-                .toolbar(content: toolbarContent)
-            }
-        }
-        .alertMessage(title: alertTitle, isPresented: $shouldPresentError)
-        .fileImporter(isPresented: $showFileChooser, allowedContentTypes: [.pdf, .spreadsheet], allowsMultipleSelection: false) { result in
-            do {
-                let fileUrl = try result.get()
-                if fileUrl[0].startAccessingSecurityScopedResource() {
-                    self.filename = fileUrl.first
+                .toolbar {
+                    ToolbarItem(placement: .topBarLeading) {
+                        Button("Ajustes", systemImage: "gear") {
+                            showSettings = true
+                        }
+                    }
                 }
-            } catch {
-                showAlert(title: "Ha ocurrido un error al importar el archivo.")
             }
         }
-        .sheet(item: $filename,
-               onDismiss: { filename?.stopAccessingSecurityScopedResource() },
-               content: { file in
-            ImportView(filename: file)
-        })
         .sheet(isPresented: $showEventEditViewController) {
             EventEditViewController(event: $selectedEvent, eventStore: storeManager.dataStore.eventStore)
         }
         .fullScreenCover(isPresented: $showSettings) {
             SettingsView()
         }
-    }
-    
-    /// Set up details of the alert message.
-    func showAlert(title: String) {
-        alertTitle = title
-        shouldPresentError = true
     }
 }
 

@@ -14,15 +14,15 @@ struct ImportView: View {
     @Environment(\.modelContext) private var modelContext
     @Environment(EventStoreManager.self) var storeManager
     @Environment(AgentStore.self) var agentStore
-
+    
     @State private var shouldPresentAlert: Bool = false
     @State private var alertTitle: String?
-
+    
     @State private var schedule: [Agent: [Event]] = [:]
     @State private var isLoading: Bool = false
-
+    
     let filename: URL
-
+    
     var dates: [Date] {
         Array(Set(schedule.values.flatMap { events in
             events.compactMap {
@@ -30,7 +30,7 @@ struct ImportView: View {
             }
         }))
     }
-
+    
     var body: some View {
         NavigationStack {
             VStack(spacing: 0) {
@@ -48,14 +48,14 @@ struct ImportView: View {
                     } else {
                         GeometryReader { geometry in
                             let columnWidth = (geometry.size.width - 162) / CGFloat(agentStore.agents.count)
-
+                            
                             ScrollView {
                                 VStack(spacing: 0) {
                                     // Header
                                     HStack(spacing: 0) {
                                         Text("Fecha")
                                             .frame(width: 130, alignment: .leading)
-
+                                        
                                         ForEach(agentStore.agents) { agent in
                                             Text(agent.name)
                                                 .frame(width: columnWidth, alignment: .leading)
@@ -65,7 +65,7 @@ struct ImportView: View {
                                     .fontWeight(.thin)
                                     .padding(.horizontal)
                                     .padding(.vertical, 8)
-
+                                    
                                     // Date and shifts rows
                                     ForEach(0..<7, id: \.self) { dayIndex in
                                         VStack {
@@ -81,7 +81,7 @@ struct ImportView: View {
                                                     .font(.subheadline)
                                                     .frame(width: 130, alignment: .leading)
                                                 }
-
+                                                
                                                 // Agent's shift columns
                                                 ForEach(agentStore.agents) { agent in
                                                     if let events = schedule[agent], dayIndex < events.count {
@@ -127,7 +127,7 @@ struct ImportView: View {
             }
         }
     }
-
+    
     private func populateWeek() {
         isLoading = true
         do {
@@ -143,7 +143,7 @@ struct ImportView: View {
         }
         isLoading = false
     }
-
+    
     func insertEvents() async throws {
         for agent in agentStore.agents {
             if let events = schedule[agent] {
@@ -155,7 +155,7 @@ struct ImportView: View {
             }
         }
     }
-
+    
     /// Set up details of the alert message.
     func showAlert(title: String) {
         alertTitle = title
