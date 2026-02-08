@@ -101,7 +101,6 @@ class AppFileManager {
         let lines = text.components(separatedBy: .newlines)
 
         for line in lines {
-            print(line)
             if line.trimmingCharacters(in: .whitespaces).hasPrefix(prefix) {
                 return line
             }
@@ -149,10 +148,10 @@ class AppFileManager {
                 let worksheet = try file.parseWorksheet(at: path)
                 return worksheet
             }
+            return nil
         } catch {
-            print("❌ Error: \(error)")
+            return nil
         }
-        return nil
     }
 
     private func getDate(from file: XLSXFile) -> Date {
@@ -177,7 +176,6 @@ class AppFileManager {
         }
 
         guard let worksheet = try? getWorksheet(from: file, sheetName: sheet) else {
-            print("No se ha encontrado nada de nada")
             return nil
         }
 
@@ -193,7 +191,6 @@ class AppFileManager {
                 }
 
                 guard rows?.count == 1 else {
-                    print("Hay más de una fila que cumple con agente = \(agent.cf)")
                     return nil
                 }
 
@@ -211,7 +208,6 @@ class AppFileManager {
             }
             return nil
         } catch {
-            print("❌ Error: \(error)")
             return nil
         }
     }

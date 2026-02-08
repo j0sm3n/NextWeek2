@@ -27,7 +27,11 @@ struct NextWeek2App: App {
         } catch {
             // If migration fails, delete the old store and create a new one
             let url = URL.applicationSupportDirectory.appending(path: "default.store")
-            try? FileManager.default.removeItem(at: url)
+            do {
+                try FileManager.default.removeItem(at: url)
+            } catch {
+                print("Error removing old database: \(error.localizedDescription)")
+            }
             
             do {
                 let schema = Schema([Shift.self])

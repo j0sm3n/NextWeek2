@@ -145,30 +145,17 @@ struct ShiftsManagementView: View {
     private func deleteShift(_ shift: Shift) {
         withAnimation {
             modelContext.delete(shift)
-            try? modelContext.save()
+            do {
+                try modelContext.save()
+            } catch {
+                print("Error deleting shift: \(error.localizedDescription)")
+            }
         }
     }
 }
 
 struct ShiftRowView: View {
     let shift: Shift
-    
-    private var startTimeFormatted: String {
-        let hours = Int(shift.startTime) / 3600
-        let minutes = (Int(shift.startTime) % 3600) / 60
-        return String(format: "%02d:%02d", hours, minutes)
-    }
-    
-    private var durationFormatted: String {
-        let hours = Int(shift.duration) / 3600
-        let minutes = (Int(shift.duration) % 3600) / 60
-        
-        if minutes == 0 {
-            return "\(hours)h"
-        } else {
-            return "\(hours)h \(minutes)m"
-        }
-    }
     
     var body: some View {
         HStack(spacing: 12) {
@@ -188,11 +175,11 @@ struct ShiftRowView: View {
             
             // Time Info
             VStack(alignment: .trailing, spacing: 4) {
-                Label(startTimeFormatted, systemImage: "clock")
+                Label(shift.startTime.formattedAsTime, systemImage: "clock")
                     .font(.subheadline)
                     .foregroundStyle(.secondary)
                 
-                Label(durationFormatted, systemImage: "hourglass")
+                Label(shift.duration.formattedAsDuration, systemImage: "hourglass")
                     .font(.caption)
                     .foregroundStyle(.tertiary)
             }

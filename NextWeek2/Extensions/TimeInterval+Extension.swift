@@ -12,22 +12,23 @@ extension TimeInterval {
         self = TimeInterval((hour * 3600) + (minute * 60))
     }
     
-    var abbreviatedTimeString: String {
-        let formatter = DateComponentsFormatter()
-        formatter.allowedUnits = [.day, .hour, .minute]
-        formatter.unitsStyle = .abbreviated
-        return formatter.string(from: self) ?? ""
+    /// Formats the time interval as "HH:mm" (e.g., "08:30")
+    var formattedAsTime: String {
+        let hours = Int(self) / 3600
+        let minutes = (Int(self) % 3600) / 60
+        return String(format: "%02d:%02d", hours, minutes)
     }
     
-    var positionalTimeString: String {
-        let formatter = DateComponentsFormatter()
-        formatter.allowedUnits = [.day, .hour, .minute]
-        formatter.unitsStyle = .positional
-        return formatter.string(from: self) ?? ""
-    }
-    
-    static func weeks(_ weeks: Double) -> TimeInterval {
-        return weeks * TimeInterval.week
+    /// Formats the time interval as duration (e.g., "8h" or "8h 30m")
+    var formattedAsDuration: String {
+        let hours = Int(self) / 3600
+        let minutes = (Int(self) % 3600) / 60
+        
+        if minutes == 0 {
+            return "\(hours)h"
+        } else {
+            return "\(hours)h \(minutes)m"
+        }
     }
     
     static var week: TimeInterval {

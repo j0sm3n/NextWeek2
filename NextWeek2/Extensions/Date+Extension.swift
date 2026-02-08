@@ -8,32 +8,28 @@
 import Foundation
 
 extension Date {
-    /// A week from the current date.
+    /// Two weeks from the current date.
     var twoWeeksLater: Date {
         Calendar.current.date(byAdding: .day, value: 14, to: Date.now) ?? Date()
     }
     
+    /// Formats date as "dd/MM" (e.g., "15/02")
     var toDateString: String {
-        let formatter = DateFormatter()
-        formatter.dateFormat = "dd/MM"
-        return formatter.string(from: self)
+        self.formatted(.dateTime.day(.twoDigits).month(.twoDigits))
     }
     
+    /// Formats date as "E, dd MMM yyyy" (e.g., "Fri, 15 Feb 2025")
     var toLongDateString: String {
-        let formatter = DateFormatter()
-        formatter.dateFormat = "E, dd MMM yyyy"
-        return formatter.string(from: self)
+        self.formatted(.dateTime.weekday(.abbreviated).day().month(.abbreviated).year())
     }
     
+    /// Formats time as "HH:mm" (e.g., "14:30")
     var toTimeString: String {
-        let formatter = DateFormatter()
-        formatter.dateFormat = "HH:mm"
-        return formatter.string(from: self)
+        self.formatted(.dateTime.hour(.twoDigits(amPM: .omitted)).minute(.twoDigits))
     }
     
+    /// Returns the capitalized day of the week (e.g., "Viernes")
     var toDayOfWeekString: String {
-        let formatter = DateFormatter()
-        formatter.dateFormat = "EEEE"
-        return formatter.string(from: self).capitalized
+        self.formatted(.dateTime.weekday(.wide)).capitalized
     }
 }

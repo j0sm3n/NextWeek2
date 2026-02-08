@@ -117,17 +117,6 @@ struct ShiftEditView: View {
         }
     }
     
-    private var formattedDuration: String {
-        let hours = Int(duration) / 3600
-        let minutes = (Int(duration) % 3600) / 60
-        
-        if minutes == 0 {
-            return "\(hours)h"
-        } else {
-            return "\(hours)h \(minutes)m"
-        }
-    }
-    
     private func saveShift() {
         // Calculate seconds since midnight for start time
         let calendar = Calendar.current
@@ -151,7 +140,11 @@ struct ShiftEditView: View {
             modelContext.insert(newShift)
         }
         
-        try? modelContext.save()
+        do {
+            try modelContext.save()
+        } catch {
+            print("Error saving shift: \(error.localizedDescription)")
+        }
         dismiss()
     }
 }
