@@ -17,13 +17,15 @@ final class Shift {
     var duration: Double
     var category: String
     var residence: String
+    var isUserCreated: Bool = false
 
-    init(name: String, startTime: Double = 0, duration: Double = 0, category: String = "", residence: String = "") {
+    init(name: String, startTime: Double = 0, duration: Double = 0, category: String = "", residence: String = "", isUserCreated: Bool = false) {
         self.name = name
         self.startTime = startTime
         self.duration = duration
         self.category = category
         self.residence = residence
+        self.isUserCreated = isUserCreated
     }
 }
 

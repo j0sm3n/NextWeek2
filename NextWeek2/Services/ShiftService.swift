@@ -166,8 +166,11 @@ final class ShiftService {
     }
 
     private func updateLocalShifts(from response: RemoteShiftsResponse, modelContext: ModelContext) async throws {
-        try modelContext.delete(model: Shift.self)
+        // Delete only non-user-created shifts
+        let nonUserCreatedPredicate = #Predicate<Shift> { $0.isUserCreated == false }
+        try modelContext.delete(model: Shift.self, where: nonUserCreatedPredicate)
 
+        // Insert new remote shifts
         for category in response.shiftCategories {
             for shiftDTO in category.shifts {
                 let shift = Shift(
@@ -175,7 +178,8 @@ final class ShiftService {
                     startTime: shiftDTO.startTimeInterval,
                     duration: shiftDTO.durationInterval,
                     category: category.category,
-                    residence: category.residence
+                    residence: category.residence,
+                    isUserCreated: false
                 )
                 modelContext.insert(shift)
             }
